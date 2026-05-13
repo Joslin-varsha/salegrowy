@@ -28,8 +28,8 @@ for f in files:
         
         # Fix the broken fetch calls created by the PowerShell script.
         # Original broken format: fetch(`/api/some-endpoint',
-        # Goal: fetch(`${API_BASE_URL}/api/some-endpoint`,
-        content = re.sub(r'fetch\(`(\/api\/.*?)([\'"`])', r'fetch(`${API_BASE_URL}\1`', content)
+        # Goal: fetch(`http://52.66.85.100:3000/api/some-endpoint`,
+        content = re.sub(r'fetch\(`(\/api\/.*?)([\'"`])', r'fetch(`http://52.66.85.100:3000/\1`', content)
         
         with open(path, 'w', encoding='utf-8') as file:
             file.write(content)

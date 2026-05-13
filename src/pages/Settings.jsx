@@ -22,7 +22,7 @@ export default function Settings() {
   useEffect(() => {
     const fetchSetupDetails = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/whatsapp/setup-details`, {
+        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/setup-details`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -50,9 +50,9 @@ export default function Settings() {
   const handleEmbeddedSignup = async (payload) => {
     try {
       // payload expects: { request_code: "", waba_id: "", phone_number_id: "" }
-      const response = await fetch(`${API_BASE_URL}/api/whatsapp/embedded-signup`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/embedded-signup`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
@@ -95,16 +95,16 @@ export default function Settings() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      
+
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
           Settings
         </h1>
-        
+
         {/* Development Toggle */}
-        <button 
-          onClick={() => setIsConnected(!isConnected)} 
+        <button
+          onClick={() => setIsConnected(!isConnected)}
           style={{ backgroundColor: isConnected ? '#ef4444' : '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
         >
           {isConnected ? 'Simulate Disconnect' : 'Simulate Connect'}
@@ -112,18 +112,18 @@ export default function Settings() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'flex-start' }}>
-        
+
         {/* Left Column */}
         <div>
           <h2 style={{ fontSize: '1.25rem', color: '#334155', marginBottom: '1.5rem', fontWeight: 600 }}>WhatsApp Cloud API Setup</h2>
-          
+
           {isConnected ? (
-           
+
             <>
               <div style={{ padding: '1.5rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px', marginBottom: '2rem' }}>
-                 <p style={{ color: 'var(--wa-green)', fontWeight: 700, margin: 0, fontSize: '0.9rem' }}>
-                   WhatsApp API connected using Embedded SignUp on Monday 12th January 2026 4:09:03 pm
-                 </p>
+                <p style={{ color: 'var(--wa-green)', fontWeight: 700, margin: 0, fontSize: '0.9rem' }}>
+                  WhatsApp API connected using Embedded SignUp on Monday 12th January 2026 4:09:03 pm
+                </p>
               </div>
 
               {/* Default Phone Number */}
@@ -158,7 +158,7 @@ export default function Settings() {
               <div style={{ marginTop: '2rem', padding: '1.5rem 0' }}>
                 <h3 style={{ fontSize: '1.25rem', color: '#475569', marginBottom: '0.5rem', fontWeight: 600 }}>It's ready</h3>
                 <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>In order to send template message you should have created and approved templates for WhatsApp Business.</p>
-                
+
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Templates</button>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Contacts</button>
@@ -185,7 +185,7 @@ export default function Settings() {
               <div style={{ position: 'relative', marginBottom: '3rem' }}>
                 <span style={{ position: 'absolute', top: '-12px', left: '16px', background: 'white', padding: '0 0.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: '4px' }}>Connect WhatsApp Manually</span>
                 <div className="card" style={{ padding: '2rem 1.5rem 1.5rem', border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
-                  
+
                   {/* Accordion 1 */}
                   <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden' }}>
                     <div onClick={() => toggleSection('fbApp')} style={{ padding: '0.8rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', backgroundColor: '#f8fafc', borderBottom: openSections.fbApp ? '1px solid #e2e8f0' : 'none' }}>
@@ -199,31 +199,31 @@ export default function Settings() {
                           <p style={{ fontSize: '0.85rem', color: '#475569', margin: 0 }}>To get started you should have <strong>Facebook App</strong>, you mostly need to select Business as type of your app.</p>
                           <a href="#" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#22c55e', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600 }}>Help & More Information <ExternalLink size={14} /></a>
                         </div>
-                        
+
                         <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', cursor: 'pointer' }}>
                           Create or Select Facebook App <ExternalLink size={14} />
                         </button>
-                        
+
                         <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>Once you have the Facebook app, add your App ID below, you will find it in App Settings &gt; Basic</p>
-                        
+
                         <div style={{ marginBottom: '1rem', maxWidth: '400px' }}>
                           <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Facebook App ID</label>
                           <div className="form-input" style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: '#fff', borderRadius: '4px' }}>
                             <span style={{ color: '#ef4444', fontWeight: 'bold' }}>×</span> <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Your Facebook App ID</span>
                           </div>
                         </div>
-                        
+
                         <div style={{ marginBottom: '1.5rem', maxWidth: '400px' }}>
                           <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Facebook App Secret</label>
                           <div className="form-input" style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #cbd5e1', backgroundColor: '#fff', borderRadius: '4px' }}>
                             <span style={{ color: '#ef4444', fontWeight: 'bold' }}>×</span> <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Add your Facebook App Secret</span>
                           </div>
                         </div>
-                        
-                        <button  style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, marginBottom: '2rem', cursor: 'pointer' }}>Save & Connect</button>
-                        
+
+                        <button style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, marginBottom: '2rem', cursor: 'pointer' }}>Save & Connect</button>
+
                         <p style={{ fontSize: '0.8rem', color: '#d97706', marginBottom: '1rem' }}>Once you submit app id and app secret webhook will be created automatically</p>
-                        
+
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           <span style={{ backgroundColor: '#ef4444', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700, width: 'fit-content', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                             <span style={{ backgroundColor: 'white', color: '#ef4444', borderRadius: '50%', width: '12px', height: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>!</span> NOT CONFIGURED
@@ -272,7 +272,7 @@ export default function Settings() {
                   <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', opacity: 0.6 }}>
                     <h3 style={{ fontSize: '1.1rem', color: '#475569', marginBottom: '0.5rem', fontWeight: 600 }}>It's ready</h3>
                     <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.25rem' }}>In order to send template message you should have created and approved templates for WhatsApp Business.</p>
-                    
+
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <button disabled style={{ backgroundColor: '#cbd5e1', color: '#64748b', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'not-allowed' }}>Manage Templates</button>
                       <button disabled style={{ backgroundColor: '#cbd5e1', color: '#64748b', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'not-allowed' }}>Manage Contacts</button>
@@ -292,10 +292,10 @@ export default function Settings() {
         <div style={{ position: 'relative' }}>
           <span style={{ position: 'absolute', top: '-12px', left: '16px', background: 'white', padding: '0 0.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: 600, border: '1px solid #e2e8f0', borderRadius: '4px', zIndex: 1 }}>WhatsApp Business Info</span>
           <div className="card" style={{ padding: '2.5rem 1.5rem 1.5rem', border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
-            
+
             <div style={{ position: 'relative', marginBottom: '2rem', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '1.5rem 1rem 1rem' }}>
               <span style={{ position: 'absolute', top: '-10px', left: '12px', background: 'white', padding: '0 0.4rem', color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>Phone Numbers</span>
-              
+
               {isConnected ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
@@ -330,7 +330,7 @@ export default function Settings() {
 
             <div style={{ position: 'relative', marginBottom: '2rem', border: '1px solid #e2e8f0', borderRadius: '6px', padding: '1.5rem 1rem 1rem' }}>
               <span style={{ position: 'absolute', top: '-10px', left: '12px', background: 'white', padding: '0 0.4rem', color: '#64748b', fontSize: '0.8rem', fontWeight: 500 }}>Overall Health</span>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>WhatsApp Business ID</div>
@@ -369,7 +369,7 @@ export default function Settings() {
               </div>
 
             </div>
-            
+
             <button style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', opacity: isConnected ? 1 : 0.5 }} disabled={!isConnected}>
               Refresh Status
             </button>

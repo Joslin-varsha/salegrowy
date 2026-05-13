@@ -14,7 +14,7 @@ export default function ContactGroups() {
   const deleteBulk = async () => {
     if (selected.length === 0) return;
     if (!window.confirm("Are you sure you want to delete the selected groups?")) return;
-    
+
     // Bulk delete mockup using state
     const updatedGroups = groups.filter((_, i) => !selected.includes(i));
     setGroups(updatedGroups);
@@ -24,7 +24,7 @@ export default function ContactGroups() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact/groups`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/contact/groups`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -55,11 +55,11 @@ export default function ContactGroups() {
     if (!newGroup.title) return;
     setCreating(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact/groups/add`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/contact/groups/add`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}` 
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(newGroup)
       });
@@ -86,7 +86,7 @@ export default function ContactGroups() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', fontFamily: 'inherit' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#31C653', margin: 0, letterSpacing: '-0.02em' }}>
@@ -108,7 +108,7 @@ export default function ContactGroups() {
       </div>
 
       <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        
+
         {/* Controls Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -120,25 +120,25 @@ export default function ContactGroups() {
               <button onClick={() => setShowBulkDropdown(!showBulkDropdown)} style={{ backgroundColor: '#f43f5e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>Bulk Actions <span style={{ fontSize: '0.6rem' }}>▼</span></button>
               {showBulkDropdown && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '150px' }}>
-                  <button onClick={deleteBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>
+                  <button onClick={deleteBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
                     Delete Selected
                   </button>
                 </div>
               )}
             </div>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem', color: '#64748b', fontSize: '0.85rem' }}>
-              Show 
+              Show
               <select style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#334155', appearance: 'auto', backgroundColor: '#fff' }}>
                 <option>50</option>
                 <option>100</option>
-              </select> 
+              </select>
               entries
             </div>
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
-            Search: 
+            Search:
             <input type="text" style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.35rem 0.5rem', width: '200px' }} />
           </div>
         </div>
@@ -213,25 +213,25 @@ export default function ContactGroups() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
             <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1e293b', fontWeight: 700 }}>Create New Group</h3>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Title</label>
-              <input 
-                type="text" 
-                className="form-input" 
+              <input
+                type="text"
+                className="form-input"
                 style={{ width: '100%', padding: '0.6rem 1rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                 value={newGroup.title}
-                onChange={(e) => setNewGroup({...newGroup, title: e.target.value})}
+                onChange={(e) => setNewGroup({ ...newGroup, title: e.target.value })}
               />
             </div>
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Description</label>
-              <textarea 
-                className="form-input" 
+              <textarea
+                className="form-input"
                 style={{ width: '100%', padding: '0.6rem 1rem', border: '1px solid #cbd5e1', borderRadius: '4px', minHeight: '80px', resize: 'vertical' }}
                 value={newGroup.description}
-                onChange={(e) => setNewGroup({...newGroup, description: e.target.value})}
+                onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
               ></textarea>
             </div>
 

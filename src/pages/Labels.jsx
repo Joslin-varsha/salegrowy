@@ -13,7 +13,7 @@ export default function Labels() {
 
   const fetchLabels = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact/labels`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/contact/labels`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -44,11 +44,11 @@ export default function Labels() {
     if (!newLabel.title) return;
     setCreating(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/contact/labels/add`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/contact/labels/add`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}` 
+          Authorization: `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(newLabel)
       });
@@ -76,7 +76,7 @@ export default function Labels() {
   const deleteBulk = async () => {
     if (selected.length === 0) return;
     if (!window.confirm("Are you sure you want to delete the selected labels?")) return;
-    
+
     // Bulk delete mockup using state
     const updatedLabels = labels.filter((_, i) => !selected.includes(i));
     setLabels(updatedLabels);
@@ -86,7 +86,7 @@ export default function Labels() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', fontFamily: 'inherit' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '2.25rem', fontWeight: 700, color: '#31C653', margin: 0, letterSpacing: '-0.02em' }}>
@@ -98,7 +98,7 @@ export default function Labels() {
       </div>
 
       <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        
+
         {/* Controls Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -110,7 +110,7 @@ export default function Labels() {
               <button onClick={() => setShowBulkDropdown(!showBulkDropdown)} style={{ backgroundColor: '#f43f5e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>Bulk Actions <span style={{ fontSize: '0.6rem' }}>▼</span></button>
               {showBulkDropdown && (
                 <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '150px' }}>
-                  <button onClick={deleteBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor='#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor='transparent'}>
+                  <button onClick={deleteBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
                     Delete Selected
                   </button>
                 </div>
@@ -150,10 +150,10 @@ export default function Labels() {
                     </td>
                     <td style={{ padding: '0.85rem 0.75rem', fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>{label.title}</td>
                     <td style={{ padding: '0.85rem 0.75rem' }}>
-                      <span style={{ 
-                        backgroundColor: label.bg_color, 
-                        color: label.text_color, 
-                        padding: '0.25rem 0.75rem', 
+                      <span style={{
+                        backgroundColor: label.bg_color,
+                        color: label.text_color,
+                        padding: '0.25rem 0.75rem',
                         borderRadius: '999px',
                         fontSize: '0.75rem',
                         fontWeight: 600,
@@ -185,15 +185,15 @@ export default function Labels() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
             <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1e293b', fontWeight: 700 }}>Create New Label</h3>
-            
+
             <div style={{ marginBottom: '1rem' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Title</label>
-              <input 
-                type="text" 
-                className="form-input" 
+              <input
+                type="text"
+                className="form-input"
                 style={{ width: '100%', padding: '0.6rem 1rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                 value={newLabel.title}
-                onChange={(e) => setNewLabel({...newLabel, title: e.target.value})}
+                onChange={(e) => setNewLabel({ ...newLabel, title: e.target.value })}
               />
             </div>
 
@@ -201,23 +201,23 @@ export default function Labels() {
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Text Color</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input 
-                    type="color" 
+                  <input
+                    type="color"
                     value={newLabel.text_color}
-                    onChange={(e) => setNewLabel({...newLabel, text_color: e.target.value})}
+                    onChange={(e) => setNewLabel({ ...newLabel, text_color: e.target.value })}
                     style={{ border: 'none', width: '30px', height: '30px', padding: 0, cursor: 'pointer' }}
                   />
                   <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{newLabel.text_color}</span>
                 </div>
               </div>
-              
+
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Background Color</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <input 
-                    type="color" 
+                  <input
+                    type="color"
                     value={newLabel.bg_color}
-                    onChange={(e) => setNewLabel({...newLabel, bg_color: e.target.value})}
+                    onChange={(e) => setNewLabel({ ...newLabel, bg_color: e.target.value })}
                     style={{ border: 'none', width: '30px', height: '30px', padding: 0, cursor: 'pointer' }}
                   />
                   <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{newLabel.bg_color}</span>
@@ -229,10 +229,10 @@ export default function Labels() {
               <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Preview</label>
               <div style={{ padding: '0.5rem', border: '1px dashed #cbd5e1', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {newLabel.title ? (
-                  <span style={{ 
-                    backgroundColor: newLabel.bg_color, 
-                    color: newLabel.text_color, 
-                    padding: '0.25rem 0.75rem', 
+                  <span style={{
+                    backgroundColor: newLabel.bg_color,
+                    color: newLabel.text_color,
+                    padding: '0.25rem 0.75rem',
                     borderRadius: '999px',
                     fontSize: '0.85rem',
                     fontWeight: 600

@@ -34,9 +34,9 @@ for (const relPath of files) {
     }
 
     // Replace endpoints
-    content = content.replace(/fetch\(\s*['"]\/api\//g, "fetch(`${API_BASE_URL}/api/");
-    content = content.replace(/fetch\(\s*`\/api\//g, "fetch(`${API_BASE_URL}/api/");
-    content = content.replace(/fetch\(\s*['"]http:\/\/192\.168\.100\.144:3000\/api\//g, "fetch(`${API_BASE_URL}/api/");
+    content = content.replace(/fetch\(\s*['"]\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
+    content = content.replace(/fetch\(\s*`\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
+    content = content.replace(/fetch\(\s*['"]http:\/\/192\.168\.100\.144:3000\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
 
     fs.writeFileSync(filePath, content, 'utf8');
   } catch (err) {

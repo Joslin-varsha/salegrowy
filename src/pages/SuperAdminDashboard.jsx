@@ -41,15 +41,15 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/superadmin/dashboard`, {
+        const response = await fetch(`http://52.66.85.100:3000/api/superadmin/dashboard`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
@@ -77,13 +77,13 @@ export default function SuperAdminDashboard() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem', paddingBottom: '2rem' }}>
-      
+
       {/* Premium Header */}
-      <div style={{ 
-        marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        backgroundColor: '#ffffff', padding: '1.5rem 2rem', borderRadius: '16px', 
+      <div style={{
+        marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        backgroundColor: '#ffffff', padding: '1.5rem 2rem', borderRadius: '16px',
         border: '1px solid rgba(16, 185, 129, 0.1)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
-        backgroundImage: 'linear-gradient(to right, rgba(16, 185, 129, 0.03), transparent)' 
+        backgroundImage: 'linear-gradient(to right, rgba(16, 185, 129, 0.03), transparent)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--wa-green) 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(16, 185, 129, 0.25)' }}>
@@ -97,7 +97,7 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
       </div>
-      
+
       {/* Alert */}
       <div style={{ backgroundColor: '#f43f5e', color: 'white', padding: '1rem 1.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', fontWeight: 500, boxShadow: '0 4px 6px -1px rgba(244, 63, 94, 0.2)' }}>
         <ShieldAlert size={18} />
@@ -115,7 +115,7 @@ export default function SuperAdminDashboard() {
       <div style={{ backgroundColor: '#1e1b4b', borderRadius: '12px', padding: '2rem', minHeight: '400px', display: 'flex', flexDirection: 'column', color: 'white', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 25px -5px rgba(30, 27, 75, 0.5)' }}>
         <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '1px' }}>LAST 12 MONTHS</div>
         <div style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '0.25rem' }}>New Vendor Registrations</div>
-        
+
         {/* Curved SVG Line Simulation */}
         <svg viewBox="0 0 1000 300" style={{ position: 'absolute', bottom: '40px', left: 0, width: '100%', height: '250px', preserveAspectRatio: 'none' }}>
           <path d="M0,250 C100,250 150,50 300,100 C450,150 550,250 700,180 C850,110 950,200 1000,250" fill="none" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
@@ -153,7 +153,7 @@ export default function SuperAdminDashboard() {
           <span>Feb 2026</span>
           <span>Mar 2026</span>
         </div>
-        
+
         {/* Horizontal grid lines */}
         <div style={{ position: 'absolute', top: '108px', left: '4rem', right: '4rem', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', zIndex: 1 }}></div>
         <div style={{ position: 'absolute', top: '155px', left: '4rem', right: '4rem', borderBottom: '1px solid rgba(99, 102, 241, 0.1)', zIndex: 1 }}></div>
@@ -171,7 +171,7 @@ export default function SuperAdminDashboard() {
             <ChevronRight size={16} />
           </button>
         </div>
-        
+
         <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>

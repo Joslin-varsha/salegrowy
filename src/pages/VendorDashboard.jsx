@@ -34,61 +34,61 @@ export default function VendorDashboard() {
   console.log("TOKEN:", localStorage.getItem('token'));
 
   useEffect(() => {
-  const fetchDashboard = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/vendor/dashboard`, {
-         method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  }
-});
+    const fetchDashboard = async () => {
+      try {
+        const response = await fetch(`http://52.66.85.100:3000/api/vendor/dashboard`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
 
-console.log("STATUS:", response.status);
+        console.log("STATUS:", response.status);
 
-  if (!response.ok) {
-  throw new Error("API not found or server error");
-}
+        if (!response.ok) {
+          throw new Error("API not found or server error");
+        }
 
-const result = await response.json();
-console.log("RESPONSE:", result);
+        const result = await response.json();
+        console.log("RESPONSE:", result);
 
-      if (result.success) {
-        setDashboardData(result.data);
+        if (result.success) {
+          setDashboardData(result.data);
+        }
+      } catch (error) {
+        console.error(error);
       }
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    };
 
-  fetchDashboard();
-}, []);
+    fetchDashboard();
+  }, []);
 
-if (!dashboardData) {
-  return (
-    <div style={{
-      height: '60vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '1rem',
-      color: '#64748b'
-    }}>
-      Loading dashboard...
-    </div>
-  );
-}
+  if (!dashboardData) {
+    return (
+      <div style={{
+        height: '60vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '1rem',
+        color: '#64748b'
+      }}>
+        Loading dashboard...
+      </div>
+    );
+  }
 
   const metrics = dashboardData ? [
-  { title: 'TOTAL CONTACTS', value: dashboardData.totalContacts, icon: User, color: '#0ea5e9', linkText: 'Manage Contacts', linkPath: '/dashboard/contacts' },
-  { title: 'TOTAL GROUPS', value: dashboardData.totalGroups, icon: Users, color: '#10b981', linkText: 'Manage Groups', linkPath: '/dashboard/contacts/groups' },
-  { title: 'TOTAL CAMPAIGNS', value: dashboardData.totalCampaigns, icon: Megaphone, color: '#ef4444', linkText: 'Manage Campaigns', linkPath: '/dashboard/campaigns' },
-  { title: 'TOTAL TEMPLATES', value: dashboardData.totalTemplates, icon: Layers, color: '#10b981', linkText: 'Manage Templates', linkPath: '/dashboard/whatsapp-templates' },
-  { title: 'TOTAL BOT REPLIES', value: dashboardData.totalBotReplies, icon: Bot, color: '#10b981', linkText: 'Manage Bot Replies' },
-  { title: 'ACTIVE TEAM MEMBERS', value: dashboardData.activeTeamMembers, icon: User, color: '#f97316', linkText: 'Manage Team Member' },
-  { title: 'MESSAGES IN QUEUE', value: dashboardData.messagesInQueue, icon: List, color: '#10b981', linkText: null },
-  { title: 'MESSAGES PROCESSED', value: dashboardData.totalMessagesProcessed, icon: CheckCircle, color: '#10b981', linkText: null },
-] : [];
+    { title: 'TOTAL CONTACTS', value: dashboardData.totalContacts, icon: User, color: '#0ea5e9', linkText: 'Manage Contacts', linkPath: '/dashboard/contacts' },
+    { title: 'TOTAL GROUPS', value: dashboardData.totalGroups, icon: Users, color: '#10b981', linkText: 'Manage Groups', linkPath: '/dashboard/contacts/groups' },
+    { title: 'TOTAL CAMPAIGNS', value: dashboardData.totalCampaigns, icon: Megaphone, color: '#ef4444', linkText: 'Manage Campaigns', linkPath: '/dashboard/campaigns' },
+    { title: 'TOTAL TEMPLATES', value: dashboardData.totalTemplates, icon: Layers, color: '#10b981', linkText: 'Manage Templates', linkPath: '/dashboard/whatsapp-templates' },
+    { title: 'TOTAL BOT REPLIES', value: dashboardData.totalBotReplies, icon: Bot, color: '#10b981', linkText: 'Manage Bot Replies' },
+    { title: 'ACTIVE TEAM MEMBERS', value: dashboardData.activeTeamMembers, icon: User, color: '#f97316', linkText: 'Manage Team Member' },
+    { title: 'MESSAGES IN QUEUE', value: dashboardData.messagesInQueue, icon: List, color: '#10b981', linkText: null },
+    { title: 'MESSAGES PROCESSED', value: dashboardData.totalMessagesProcessed, icon: CheckCircle, color: '#10b981', linkText: null },
+  ] : [];
 
 
 
@@ -131,7 +131,7 @@ if (!dashboardData) {
                   {idx + 1}
                 </div>
                 <div style={{ fontSize: '0.95rem', color: '#475569' }}>
-                  {step.text} {step.linkText && <Link to="#" style={{color: 'var(--wa-green)', fontWeight: 600}}>{step.linkText}</Link>}
+                  {step.text} {step.linkText && <Link to="#" style={{ color: 'var(--wa-green)', fontWeight: 600 }}>{step.linkText}</Link>}
                 </div>
               </div>
             ))}

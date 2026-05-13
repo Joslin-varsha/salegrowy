@@ -13,7 +13,7 @@ export default function CreateCampaign() {
   const [varSelections, setVarSelections] = useState({});
   const [restrictLang, setRestrictLang] = useState(false);
   const [scheduleNow, setScheduleNow] = useState(true);
-  
+
   const [campaignTitle, setCampaignTitle] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,15 +26,15 @@ export default function CreateCampaign() {
     const fetchTemplates = async () => {
       try {
         setTemplatesLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/whatsapp/templates`, {
+        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
@@ -64,21 +64,21 @@ export default function CreateCampaign() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/campaign/create`, {
-  method: 'POST',
-  headers: { 
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${localStorage.getItem('token')}`
-  },
-  body: JSON.stringify({
-    title: campaignTitle,
-    whatsapp_template_id: Number(selectedTemplate?.template_id || 106), // Make sure it's a number
-    scheduled_at: scheduleNow ? new Date().toISOString().replace('T', ' ').substring(0, 19) : "2026-03-30 11:00:00",
-    contact_group_id: Number(selectedGroup),
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
-    template_data: Object.keys(varSelections).length ? JSON.stringify(varSelections) : ""
-  })
-});
+      const response = await fetch(`http://52.66.85.100:3000/api/campaign/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          title: campaignTitle,
+          whatsapp_template_id: Number(selectedTemplate?.template_id || 106), // Make sure it's a number
+          scheduled_at: scheduleNow ? new Date().toISOString().replace('T', ' ').substring(0, 19) : "2026-03-30 11:00:00",
+          contact_group_id: Number(selectedGroup),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+          template_data: Object.keys(varSelections).length ? JSON.stringify(varSelections) : ""
+        })
+      });
 
       let result;
       try {
@@ -124,30 +124,30 @@ export default function CreateCampaign() {
   const renderVariableInput = (vId, labelContext) => {
     const selected = varSelections[vId] || "Choose or Write you own";
     const isCustom = selected === "custom values";
-    
+
     return (
       <div key={vId} className="form-group" style={{ marginBottom: 0 }}>
         <label className="form-label" style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem', display: 'block', whiteSpace: 'nowrap' }}>
           Assign content for <span style={{ backgroundColor: '#f1f5f9', padding: '0.15rem 0.4rem', margin: '0 0.2rem', borderRadius: '4px', fontWeight: 600, color: '#1e293b' }}>{`{{${labelContext}}}`}</span> variable
         </label>
         <div style={{ position: 'relative', marginBottom: isCustom ? '0.5rem' : 0 }}>
-          <select 
-            className="form-input" 
+          <select
+            className="form-input"
             style={{ padding: '0.6rem 1rem', appearance: 'none', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', cursor: 'pointer' }}
             value={selected}
-            onChange={(e) => setVarSelections({...varSelections, [vId]: e.target.value})}
+            onChange={(e) => setVarSelections({ ...varSelections, [vId]: e.target.value })}
           >
             {variableOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
           </select>
           <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
         </div>
         {isCustom && (
-          <input 
-            type="text" 
-            className="form-input" 
-            placeholder="type to use custom value" 
-            style={{ padding: '0.6rem 1rem', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
-            onChange={(e) => setVarSelections({...varSelections, [`${vId}_custom`]: e.target.value})}
+          <input
+            type="text"
+            className="form-input"
+            placeholder="type to use custom value"
+            style={{ padding: '0.6rem 1rem', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+            onChange={(e) => setVarSelections({ ...varSelections, [`${vId}_custom`]: e.target.value })}
           />
         )}
       </div>
@@ -163,7 +163,7 @@ export default function CreateCampaign() {
   const renderStep1 = () => (
     <div style={{ marginBottom: '2rem' }}>
       <h3 style={{ color: '#ef4444', fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Step 1</h3>
-      
+
       {selectedTemplateLoading ? (
         <div className="card" style={{ padding: '1.5rem', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
           Loading template...
@@ -210,7 +210,7 @@ export default function CreateCampaign() {
                       }
 
                       try {
-                        const response = await fetch(`${API_BASE_URL}/api/whatsapp/templates/view/${templateId}`, {
+                        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates/view/${templateId}`, {
                           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                         });
 
@@ -257,14 +257,14 @@ export default function CreateCampaign() {
           <div className="card" style={{ padding: '1.5rem', border: '1px solid #e2e8f0', boxShadow: 'none', marginBottom: '1.5rem', position: 'relative', marginTop: '1.5rem' }}>
             <div style={{ position: 'absolute', top: '-15px', left: '16px', display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.2rem 0.6rem' }}>
               <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Template</span>
-              <button 
-                onClick={() => { setSelectedTemplate(null); setUploadedImage(null); }} 
+              <button
+                onClick={() => { setSelectedTemplate(null); setUploadedImage(null); }}
                 style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '0.2rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, cursor: 'pointer' }}
               >
                 Change
               </button>
             </div>
-            
+
             <div style={{ marginTop: '0.5rem' }}>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>{selectedTemplate.template_name || selectedTemplate.name}</div>
               <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.4rem' }}>Language Code: <span style={{ fontWeight: 700, color: '#1e293b' }}>{selectedTemplate.language}</span></div>
@@ -284,9 +284,9 @@ export default function CreateCampaign() {
                   </div>
                   {!isMedia && c.text && (
                     <div style={{ marginBottom: vars.length > 0 ? '1.5rem' : 0, fontSize: '0.9rem', color: '#1e293b', lineHeight: '1.5', fontWeight: 600 }}>
-                      {c.text.split(/(\{\{[^}]+\}\})/g).map((part, i) => 
-                        part.startsWith('{{') && part.endsWith('}}') ? 
-                          <span key={i} style={{ backgroundColor: '#fef3c7', padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 600 }}>{part}</span> : 
+                      {c.text.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
+                        part.startsWith('{{') && part.endsWith('}}') ?
+                          <span key={i} style={{ backgroundColor: '#fef3c7', padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 600 }}>{part}</span> :
                           part
                       )}
                     </div>
@@ -294,7 +294,7 @@ export default function CreateCampaign() {
                   {isMedia && (
                     <div style={{ marginBottom: vars.length > 0 ? '1.5rem' : 0 }}>
                       <label className="form-label" style={{ fontSize: '0.85rem' }}>Select {c.format === 'IMAGE' ? 'Image' : c.format === 'VIDEO' ? 'Video' : 'Document'}</label>
-                      <div 
+                      <div
                         style={{ backgroundColor: '#f8fafc', width: '240px', height: '120px', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', color: '#64748b', fontSize: '0.85rem', border: '2px dashed #cbd5e1', overflow: 'hidden' }}
                         onClick={() => fileInputRef.current?.click()}
                       >
@@ -325,9 +325,9 @@ export default function CreateCampaign() {
                     Body
                   </div>
                   <div style={{ marginBottom: vars.length > 0 ? '1.5rem' : 0, fontSize: '0.9rem', color: '#1e293b', lineHeight: '1.5' }}>
-                    {c.text.split(/(\{\{[^}]+\}\})/g).map((part, i) => 
-                      part.startsWith('{{') && part.endsWith('}}') ? 
-                        <span key={i} style={{ backgroundColor: '#fef3c7', padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 600 }}>{part}</span> : 
+                    {c.text.split(/(\{\{[^}]+\}\})/g).map((part, i) =>
+                      part.startsWith('{{') && part.endsWith('}}') ?
+                        <span key={i} style={{ backgroundColor: '#fef3c7', padding: '0.1rem 0.3rem', borderRadius: '3px', fontWeight: 600 }}>{part}</span> :
                         part
                     )}
                   </div>
@@ -370,7 +370,7 @@ export default function CreateCampaign() {
   const renderStep2 = () => (
     <div>
       <h3 style={{ color: '#ef4444', fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem' }}>Step 2</h3>
-      
+
       <div className="card" style={{ padding: '1.5rem', border: '1px solid var(--border-color)', boxShadow: 'none', position: 'relative', marginTop: '1.5rem' }}>
         <div style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: 600, position: 'absolute', top: '-15px', left: '16px', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.2rem 0.6rem' }}>
           Contacts and Schedule
@@ -378,10 +378,10 @@ export default function CreateCampaign() {
 
         <div className="form-group" style={{ marginBottom: '1.2rem' }}>
           <label className="form-label" style={{ fontSize: '0.85rem', color: '#64748b' }}>Campaign Title</label>
-          <input 
-            type="text" 
-            className="form-input" 
-            style={{ backgroundColor: '#ffffff', padding: '0.6rem 1rem', border: '1px solid #cbd5e1' }} 
+          <input
+            type="text"
+            className="form-input"
+            style={{ backgroundColor: '#ffffff', padding: '0.6rem 1rem', border: '1px solid #cbd5e1' }}
             value={campaignTitle}
             onChange={(e) => setCampaignTitle(e.target.value)}
           />
@@ -390,8 +390,8 @@ export default function CreateCampaign() {
         <div className="form-group" style={{ marginBottom: '1.2rem' }}>
           <label className="form-label" style={{ fontSize: '0.85rem', color: '#64748b' }}>Groups/Contact</label>
           <div style={{ position: 'relative' }}>
-            <select 
-              className="form-input" 
+            <select
+              className="form-input"
               style={{ padding: '0.6rem 1rem', appearance: 'none', backgroundColor: '#ffffff', border: '1px solid #cbd5e1' }}
               value={selectedGroup}
               onChange={(e) => setSelectedGroup(e.target.value)}
@@ -437,8 +437,8 @@ export default function CreateCampaign() {
           </div>
         </div>
 
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           disabled={isSubmitting}
           onClick={handleCreateCampaign}
           style={{ backgroundColor: '#22c55e', width: 'auto', padding: '0.7rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, opacity: isSubmitting ? 0.7 : 1 }}
@@ -494,7 +494,7 @@ export default function CreateCampaign() {
                         <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', marginTop: '0.5rem', borderTop: '1px solid #e9edef', paddingTop: '0.5rem' }}>
                           {(c.buttons || []).map((b, bi) => (
                             <div key={bi} style={{ color: '#0ea5e9', textAlign: 'center', fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0' }}>
-                              {b.type === 'URL' ? <span style={{display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.3rem'}}><ExternalLink size={14} /> {b.text}</span> : b.text}
+                              {b.type === 'URL' ? <span style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.3rem' }}><ExternalLink size={14} /> {b.text}</span> : b.text}
                             </div>
                           ))}
                         </div>
@@ -512,13 +512,13 @@ export default function CreateCampaign() {
           </div>
         </div>
       </div>
-  
-  );
-};
+
+    );
+  };
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', backgroundColor: '#ffffff', padding: '1rem 1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
@@ -529,8 +529,8 @@ export default function CreateCampaign() {
             <RefreshCw size={14} />
             Sync WhatsApp Templates
           </button>
-          <button 
-            className="btn btn-primary" 
+          <button
+            className="btn btn-primary"
             style={{ backgroundColor: '#1e293b', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'auto', cursor: 'pointer' }}
             onClick={() => navigate('/dashboard/campaigns')}
           >

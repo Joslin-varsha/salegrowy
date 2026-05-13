@@ -20,11 +20,19 @@ import SuperAdminLayout from './layouts/SuperAdminLayout';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminVendors from './pages/SuperAdminVendors';
 import SuperAdminCampaigns from './pages/SuperAdminCampaigns';
+import AIAgent from "./aiagent/aiagent";
+import FlowChatbotUI from "./chatbot/FlowChatbotUI";
+import BotFlows from './pages/BotFlows';
+import ShopifyAuth from './pages/ShopifyAuth';
 
 function App() {
   return (
     <Router>
       <Routes>
+        {/* Shopify Auth Routes */}
+        <Route path="/shopify" element={<ShopifyAuth />} />
+        <Route path="/callback" element={<ShopifyAuth />} />
+
         {/* Auth routes with Standard Header Layout */}
         <Route element={
           <div className="min-h-screen flex flex-col">
@@ -53,6 +61,9 @@ function App() {
           <Route path="whatsapp-templates/create" element={<CreateWhatsAppTemplate />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="agent" element={<AIAgent />} />
+          <Route path="chatflow" element={<FlowChatbotUI />} />
+          <Route path="bot/flows" element={<BotFlows />} />
         </Route>
 
         {/* Super Admin routes */}
@@ -61,7 +72,6 @@ function App() {
           <Route path="vendors" element={<SuperAdminVendors />} />
           <Route path="campaigns" element={<SuperAdminCampaigns />} />
         </Route>
-
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

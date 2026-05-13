@@ -15,19 +15,19 @@ export default function MessageLog() {
     const fetchLogs = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/message-log/list`, {
+        const response = await fetch(`http://52.66.85.100:3000/api/message-log/list`, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}` 
+            Authorization: `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({ page: 1, limit: entriesCount })
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
@@ -55,11 +55,11 @@ export default function MessageLog() {
     setShowViewModal(true);
     setSelectedLog(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/message-log/view/${id}`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/message-log/view/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -76,7 +76,7 @@ export default function MessageLog() {
       } else {
         throw new Error("Expected JSON response but got something else");
       }
-    } catch(err) {
+    } catch (err) {
       console.error("Error fetching message details:", err);
       alert("Failed to load message details. Server error.");
       setShowViewModal(false);
@@ -85,9 +85,17 @@ export default function MessageLog() {
     }
   };
 
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredLogs = logs.filter(log =>
+    (log.recipient || log.contact_id || log.to || log.phone_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (log.first_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (log.last_name || '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
@@ -102,7 +110,7 @@ export default function MessageLog() {
       {/* Filters Card */}
       <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '1.5rem', alignItems: 'flex-end' }}>
-          
+
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Select Message Type</label>
             <div style={{ position: 'relative' }}>
@@ -149,13 +157,13 @@ export default function MessageLog() {
 
       {/* Table Card */}
       <div className="card" style={{ padding: '1.5rem' }}>
-        
+
         {/* Table Controls */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             Show
-            <select 
-              value={entriesCount} 
+            <select
+              value={entriesCount}
               onChange={(e) => setEntriesCount(Number(e.target.value))}
               style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}
             >
@@ -165,11 +173,18 @@ export default function MessageLog() {
             </select>
             entries
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
             Search:
             <div style={{ position: 'relative' }}>
-              <input type="text" className="form-input" style={{ padding: '0.35rem 0.75rem', width: '200px' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Recipient or name..."
+                className="form-input"
+                style={{ padding: '0.35rem 0.75rem', width: '200px', outline: 'none' }}
+              />
             </div>
           </div>
         </div>
@@ -191,7 +206,9 @@ export default function MessageLog() {
             <tbody>
               {loading ? (
                 <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>Loading message logs...</td></tr>
-              ) : logs.map((log, idx) => (
+              ) : filteredLogs.length === 0 ? (
+                <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No logs found.</td></tr>
+              ) : filteredLogs.slice(0, entriesCount).map((log, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                     {log.recipient || log.contact_id || log.to || log.phone_number}
@@ -208,17 +225,17 @@ export default function MessageLog() {
                   </td>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button style={{ 
-                        backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', 
-                        padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, 
-                        display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' 
+                      <button style={{
+                        backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px',
+                        padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer'
                       }}>
                         <MessageCircle size={14} />
                       </button>
-                      <button onClick={() => handleView(log._id || log.id)} style={{ 
-                        backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', 
-                        padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, 
-                        display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' 
+                      <button onClick={() => handleView(log._id || log.id)} style={{
+                        backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px',
+                        padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer'
                       }}>
                         <Info size={14} />
                       </button>
@@ -229,7 +246,7 @@ export default function MessageLog() {
             </tbody>
           </table>
         </div>
-        
+
       </div>
 
       {/* View Message Modal */}
@@ -237,7 +254,7 @@ export default function MessageLog() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.25rem', color: '#1e293b', fontWeight: 700 }}>Message Details</h3>
-            
+
             {viewLoading ? (
               <p style={{ textAlign: 'center', color: '#64748b' }}>Loading details...</p>
             ) : selectedLog ? (

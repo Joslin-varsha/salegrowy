@@ -10,19 +10,19 @@ export default function SuperAdminVendors() {
     const fetchVendors = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/superadmin/vendors`, {
+        const response = await fetch(`http://52.66.85.100:3000/api/superadmin/vendors`, {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}` 
+            Authorization: `Bearer ${localStorage.getItem('token')}`
           },
           body: JSON.stringify({ page: 1, limit: 100 })
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const contentType = response.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
@@ -47,11 +47,11 @@ export default function SuperAdminVendors() {
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Premium Header */}
-      <div style={{ 
-        marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-        backgroundColor: '#ffffff', padding: '1.5rem 2rem', borderRadius: '16px', 
+      <div style={{
+        marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        backgroundColor: '#ffffff', padding: '1.5rem 2rem', borderRadius: '16px',
         border: '1px solid rgba(16, 185, 129, 0.1)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
-        backgroundImage: 'linear-gradient(to right, rgba(16, 185, 129, 0.03), transparent)' 
+        backgroundImage: 'linear-gradient(to right, rgba(16, 185, 129, 0.03), transparent)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, var(--wa-green) 0%, #059669 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(16, 185, 129, 0.25)' }}>
@@ -64,13 +64,13 @@ export default function SuperAdminVendors() {
             <p style={{ color: '#64748b', fontSize: '0.85rem', margin: 0, fontWeight: 500 }}>Manage system vendors, view billing, and control access statuses.</p>
           </div>
         </div>
-        <button style={{ backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'background-color 0.2s', boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)' }} onMouseOver={(e) => e.target.style.backgroundColor='#1e293b'} onMouseOut={(e) => e.target.style.backgroundColor='#0f172a'}>
+        <button style={{ backgroundColor: '#0f172a', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'background-color 0.2s', boxShadow: '0 4px 10px rgba(15, 23, 42, 0.2)' }} onMouseOver={(e) => e.target.style.backgroundColor = '#1e293b'} onMouseOut={(e) => e.target.style.backgroundColor = '#0f172a'}>
           <Plus size={16} /> Add Vendor
         </button>
       </div>
 
       <div className="card" style={{ padding: '1.5rem' }}>
-        
+
         {/* Table Controls */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>

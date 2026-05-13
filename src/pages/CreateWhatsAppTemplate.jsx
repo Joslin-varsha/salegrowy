@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
-import { 
-  Bold, 
-  Italic, 
-  Strikethrough, 
-  Code, 
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
   ExternalLink,
   Smartphone,
   Copy,
@@ -28,7 +28,7 @@ export default function CreateWhatsAppTemplate() {
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showAllButtons, setShowAllButtons] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     language: 'en',
@@ -99,7 +99,7 @@ export default function CreateWhatsAppTemplate() {
 
     setLoading(true);
     const components = [];
-    
+
     if (formData.headerType !== 'NONE') {
       const headerComp = { type: 'HEADER', format: formData.headerType };
       if (formData.headerType === 'TEXT') {
@@ -108,17 +108,17 @@ export default function CreateWhatsAppTemplate() {
           headerComp.example = { header_text: [formData.headerVariableExample] };
         }
       } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(formData.headerType)) {
-        headerComp.example = { header_handle: [""] }; 
+        headerComp.example = { header_handle: [""] };
       }
       components.push(headerComp);
     }
-    
+
     components.push({ type: 'BODY', text: formData.bodyText });
     if (formData.footerText) components.push({ type: 'FOOTER', text: formData.footerText });
-    
+
     if (formData.buttons.length > 0) {
-      components.push({ 
-        type: 'BUTTONS', 
+      components.push({
+        type: 'BUTTONS',
         buttons: formData.buttons.map(btn => {
           const b = { type: btn.type === 'DYNAMIC_URL' ? 'URL' : btn.type, text: btn.text };
           if (btn.type === 'PHONE_NUMBER') b.phone_number = btn.phone;
@@ -130,7 +130,7 @@ export default function CreateWhatsAppTemplate() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/whatsapp/templates/create`, {
+      const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ name: formData.name, category: formData.category, language: formData.language, components: components })
@@ -201,33 +201,33 @@ export default function CreateWhatsAppTemplate() {
           <div className="section-container">
             <div className="section-badge">Header (Optional)</div>
             <div className="form-group">
-               <label className="form-label-gray">Header Type</label>
-               <select name="headerType" className="form-input-white" value={formData.headerType} onChange={handleChange}>
-                 <option value="NONE">None</option>
-                 <option value="TEXT">Text</option>
-                 <option value="IMAGE">Image</option>
-                 <option value="VIDEO">Video</option>
-                 <option value="DOCUMENT">Document</option>
-                 <option value="LOCATION">Location</option>
-               </select>
-               
-               {formData.headerType === 'TEXT' && (
-                 <div style={{ marginTop: '1.5rem' }}>
-                   <label className="form-label-gray">Header Text</label>
-                   <div style={{ position: 'relative' }}>
+              <label className="form-label-gray">Header Type</label>
+              <select name="headerType" className="form-input-white" value={formData.headerType} onChange={handleChange}>
+                <option value="NONE">None</option>
+                <option value="TEXT">Text</option>
+                <option value="IMAGE">Image</option>
+                <option value="VIDEO">Video</option>
+                <option value="DOCUMENT">Document</option>
+                <option value="LOCATION">Location</option>
+              </select>
+
+              {formData.headerType === 'TEXT' && (
+                <div style={{ marginTop: '1.5rem' }}>
+                  <label className="form-label-gray">Header Text</label>
+                  <div style={{ position: 'relative' }}>
                     <input type="text" name="headerText" className="form-input-white" placeholder={"{{1}}"} value={formData.headerText} onChange={handleChange} />
                     <button type="button" onClick={addHeaderVariable} className="btn-add-var-small">+ Add Variable</button>
-                   </div>
-                   <label className="form-label-gray" style={{ marginTop: '1.5rem' }}>Header Text Variable Example</label>
-                   <input type="text" name="headerVariableExample" className="form-input-white" placeholder={"Example value for {{1}}"} value={formData.headerVariableExample} onChange={handleChange} />
-                 </div>
-               )}
+                  </div>
+                  <label className="form-label-gray" style={{ marginTop: '1.5rem' }}>Header Text Variable Example</label>
+                  <input type="text" name="headerVariableExample" className="form-input-white" placeholder={"Example value for {{1}}"} value={formData.headerVariableExample} onChange={handleChange} />
+                </div>
+              )}
 
-               {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(formData.headerType) && (
-                 <div onClick={handleFileClick} className="media-selector-box">
-                    {headerFilePreview ? <img src={headerFilePreview} alt="Preview" className="media-preview-img" /> : headerFile ? <div className="media-file-info"><FileText size={32} /><span>{headerFile.name}</span></div> : <><Upload size={24} /><span>Select {formData.headerType.toLowerCase()}</span></>}
-                 </div>
-               )}
+              {['IMAGE', 'VIDEO', 'DOCUMENT'].includes(formData.headerType) && (
+                <div onClick={handleFileClick} className="media-selector-box">
+                  {headerFilePreview ? <img src={headerFilePreview} alt="Preview" className="media-preview-img" /> : headerFile ? <div className="media-file-info"><FileText size={32} /><span>{headerFile.name}</span></div> : <><Upload size={24} /><span>Select {formData.headerType.toLowerCase()}</span></>}
+                </div>
+              )}
             </div>
           </div>
 
@@ -248,17 +248,17 @@ export default function CreateWhatsAppTemplate() {
           </div>
 
           <div className="form-group">
-             <label className="form-label-gray">Footer (Optional)</label>
-             <input type="text" name="footerText" className="form-input-white" placeholder="Enter footer text..." value={formData.footerText} onChange={handleChange} />
-             <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.4rem' }}>Add a short line of text to the bottom of your message template.</p>
+            <label className="form-label-gray">Footer (Optional)</label>
+            <input type="text" name="footerText" className="form-input-white" placeholder="Enter footer text..." value={formData.footerText} onChange={handleChange} />
+            <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.4rem' }}>Add a short line of text to the bottom of your message template.</p>
           </div>
 
           <div className="section-container">
             <div className="section-badge">Buttons (Optional)</div>
             <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1.25rem' }}>Create buttons that let customers respond to your message or take action.</p>
-            
+
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <button type="button" onClick={() => addButton('QUICK_REPLY')} className="btn-toolbar-navy"><Reply size={14} style={{transform: 'scaleX(-1)'}} /> Quick Reply Button</button>
+              <button type="button" onClick={() => addButton('QUICK_REPLY')} className="btn-toolbar-navy"><Reply size={14} style={{ transform: 'scaleX(-1)' }} /> Quick Reply Button</button>
               <button type="button" onClick={() => addButton('PHONE_NUMBER')} className="btn-toolbar-navy"><Phone size={14} /> Phone Number Button</button>
               <button type="button" onClick={() => addButton('COPY_CODE')} className="btn-toolbar-navy"><Copy size={14} /> Copy Code Button</button>
               <button type="button" onClick={() => addButton('URL')} className="btn-toolbar-navy"><ExternalLink size={14} /> URL Button</button>
@@ -269,43 +269,43 @@ export default function CreateWhatsAppTemplate() {
               <div key={i} className="button-card">
                 <div className="button-card-header">
                   <span>{btn.type.replace(/_/g, ' ')}</span>
-                  <X size={18} color="#ef4444" style={{cursor: 'pointer'}} onClick={() => removeButton(i)} />
+                  <X size={18} color="#ef4444" style={{ cursor: 'pointer' }} onClick={() => removeButton(i)} />
                 </div>
                 <div className="button-card-body">
-                   {btn.type !== 'COPY_CODE' && (
-                     <div className="form-group">
-                       <label className="form-label-gray">Button Text</label>
-                       <div className="input-with-icon">
-                         <span className="input-icon-label">A</span>
-                         <input type="text" className="form-input-bare" placeholder="Enter button text" value={btn.text} onChange={(e) => updateButton(i, 'text', e.target.value)} />
-                       </div>
-                     </div>
-                   )}
-                   {btn.type === 'PHONE_NUMBER' && (
-                     <div className="form-group">
-                       <label className="form-label-gray">Phone Number</label>
-                       <div className="input-with-icon">
-                         <Phone size={16} className="input-icon" />
-                         <input type="text" className="form-input-bare" placeholder="Enter phone number" value={btn.phone} onChange={(e) => updateButton(i, 'phone', e.target.value)} />
-                       </div>
-                     </div>
-                   )}
-                   {(btn.type === 'URL' || btn.type === 'DYNAMIC_URL') && (
-                     <div className="form-group">
-                       <label className="form-label-gray">Website URL</label>
-                       <div className="input-with-icon">
-                         <LinkIcon size={16} className="input-icon" />
-                         <input type="text" className="form-input-bare" placeholder="https://..." value={btn.url} onChange={(e) => updateButton(i, 'url', e.target.value)} />
-                         {btn.type === 'DYNAMIC_URL' && <span className="input-suffix">{"{{1}}"}</span>}
-                       </div>
-                     </div>
-                   )}
-                   {(btn.type === 'COPY_CODE' || btn.type === 'DYNAMIC_URL') && (
-                     <div className="form-group">
-                       <label className="form-label-gray">Example</label>
-                       <input type="text" className="form-input-white" placeholder="Enter example value" value={btn.example} onChange={(e) => updateButton(i, 'example', e.target.value)} />
-                     </div>
-                   )}
+                  {btn.type !== 'COPY_CODE' && (
+                    <div className="form-group">
+                      <label className="form-label-gray">Button Text</label>
+                      <div className="input-with-icon">
+                        <span className="input-icon-label">A</span>
+                        <input type="text" className="form-input-bare" placeholder="Enter button text" value={btn.text} onChange={(e) => updateButton(i, 'text', e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                  {btn.type === 'PHONE_NUMBER' && (
+                    <div className="form-group">
+                      <label className="form-label-gray">Phone Number</label>
+                      <div className="input-with-icon">
+                        <Phone size={16} className="input-icon" />
+                        <input type="text" className="form-input-bare" placeholder="Enter phone number" value={btn.phone} onChange={(e) => updateButton(i, 'phone', e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                  {(btn.type === 'URL' || btn.type === 'DYNAMIC_URL') && (
+                    <div className="form-group">
+                      <label className="form-label-gray">Website URL</label>
+                      <div className="input-with-icon">
+                        <LinkIcon size={16} className="input-icon" />
+                        <input type="text" className="form-input-bare" placeholder="https://..." value={btn.url} onChange={(e) => updateButton(i, 'url', e.target.value)} />
+                        {btn.type === 'DYNAMIC_URL' && <span className="input-suffix">{"{{1}}"}</span>}
+                      </div>
+                    </div>
+                  )}
+                  {(btn.type === 'COPY_CODE' || btn.type === 'DYNAMIC_URL') && (
+                    <div className="form-group">
+                      <label className="form-label-gray">Example</label>
+                      <input type="text" className="form-input-white" placeholder="Enter example value" value={btn.example} onChange={(e) => updateButton(i, 'example', e.target.value)} />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -329,7 +329,7 @@ export default function CreateWhatsAppTemplate() {
                 {formData.headerType === 'VIDEO' && <div className="wa-media-placeholder"><Play size={40} color="#94a3b8" /></div>}
                 {formData.headerType === 'DOCUMENT' && <div className="wa-media-placeholder"><FileText size={40} color="#94a3b8" /></div>}
                 {formData.headerType === 'LOCATION' && <div className="wa-media-placeholder"><MapPin size={40} color="#94a3b8" /></div>}
-                
+
                 <div style={{ fontSize: '0.9rem', whiteSpace: 'pre-wrap', color: '#334155', marginBottom: '0.5rem' }}>
                   {formData.bodyText || <span style={{ color: '#94a3b8' }}>Body text...</span>}
                 </div>
@@ -339,7 +339,7 @@ export default function CreateWhatsAppTemplate() {
               {/* BUTTONS INSIDE BUBBLE WITH SEPARATORS */}
               {renderedButtons.map((btn, i) => (
                 <div key={i} className="wa-btn-row">
-                  {btn.type === 'QUICK_REPLY' && <Reply size={16} className="wa-btn-icon" style={{transform: 'scaleX(-1)'}} />}
+                  {btn.type === 'QUICK_REPLY' && <Reply size={16} className="wa-btn-icon" style={{ transform: 'scaleX(-1)' }} />}
                   {btn.type === 'PHONE_NUMBER' && <Phone size={16} className="wa-btn-icon" />}
                   {btn.type === 'COPY_CODE' && <Copy size={16} className="wa-btn-icon" />}
                   {(btn.type === 'URL' || btn.type === 'DYNAMIC_URL') && <ExternalLink size={16} className="wa-btn-icon" />}
@@ -350,11 +350,11 @@ export default function CreateWhatsAppTemplate() {
               {/* SEE ALL OPTIONS TOGGLE */}
               {formData.buttons.length > 2 && (
                 <div className="wa-btn-row" onClick={() => setShowAllButtons(!showAllButtons)} style={{ cursor: 'pointer', color: '#00a884', fontWeight: 600 }}>
-                   {showAllButtons ? (
-                     <><ChevronUp size={16} className="wa-btn-icon" /> Show less</>
-                   ) : (
-                     <><MessageSquare size={16} className="wa-btn-icon" /> See all options</>
-                   )}
+                  {showAllButtons ? (
+                    <><ChevronUp size={16} className="wa-btn-icon" /> Show less</>
+                  ) : (
+                    <><MessageSquare size={16} className="wa-btn-icon" /> See all options</>
+                  )}
                 </div>
               )}
             </div>

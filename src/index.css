@@ -1,4 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 142 71% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+    --success: 142 64% 40%;
+    --warning: 38 92% 50%;
+    --info: 221 83% 53%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
 
 :root {
   --wa-green: #25D366;
@@ -10,6 +51,9 @@
   --border-color: #d1d7db;
   --input-bg: #f0f2f5;
   --danger: #ef4444;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
 * {
@@ -18,12 +62,27 @@
   padding: 0;
 }
 
+html, body, #root {
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #ffffff;
-  color: var(--text-primary);
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 a {
@@ -48,8 +107,24 @@ a:hover {
   min-height: 100vh;
 }
 
+.h-screen {
+  height: 100vh;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.w-full {
+  width: 100%;
+}
+
 .flex {
   display: flex;
+}
+
+.flex-row {
+  flex-direction: row;
 }
 
 .flex-col {
@@ -58,6 +133,115 @@ a:hover {
 
 .flex-1 {
   flex: 1 1 0%;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.relative {
+  position: relative;
+}
+
+.absolute {
+  position: absolute;
+}
+
+/* React Flow Custom Styling (Ported from reference) */
+.react-flow__handle-right {
+  background: #4cabab !important;
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: 2px solid white !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.react-flow__handle-left {
+  background: white !important;
+  border: 5px solid #4cabab !important;
+  width: 15px !important;
+  height: 15px !important;
+  border-radius: 50% !important;
+  left: -8px !important;
+}
+
+.react-flow__edge-path {
+  stroke: #4cabab !important;
+  stroke-width: 3px !important;
+}
+
+.react-flow__edge-path:hover {
+  stroke: #4cabab !important;
+  stroke-width: 3px !important;
+  stroke-dasharray: 5 5;
+  animation: dash-animation 1.5s linear infinite;
+}
+
+@keyframes dash-animation {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* UI Components (Ported from reference) */
+.ok-btn-hover-green {
+  background-color: #1677ff !important;
+  border-color: #1677ff !important;
+  color: #fff !important;
+}
+
+.ok-btn-hover-green:hover {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+  color: #fff !important;
+}
+
+.no-btn-hover-red {
+  background-color: #1677ff !important;
+  border-color: #1677ff !important;
+  color: #fff !important;
+}
+
+.no-btn-hover-red:hover {
+  background-color: #ff0000 !important;
+  border-color: #ff0000 !important;
+  color: #fff !important;
+}
+
+/* Custom Scrollbars */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 20px;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+/* Layering fixes */
+.react-flow__edges {
+  z-index: 3 !important;
+}
+
+.react-flow__nodes {
+  z-index: 1 !important;
 }
 
 /* Card Styling */
@@ -293,3 +477,106 @@ a:hover {
   color: var(--wa-green) !important;
   background-color: rgba(37, 211, 102, 0.1) !important;
 }
+
+/* Custom styling for the node container */
+.custom-node {
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+.custom-handle {
+  width: 24px;
+  height: 24px;
+  background-color: #4fd1c5;
+  border: 2px solid white;
+  border-radius: 50%;
+  position: absolute;
+  right: -8px !important;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.handle-icon {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Handle states */
+.active {
+  background: #4fd1c5 !important;
+}
+
+.inactive {
+  background: #4fd1c5 !important; /* Changed from red to teal to match user preference */
+  opacity: 0.8;
+}
+
+.swal2-confirm-custom {
+  color: white !important;
+  background-color: #3085d6 !important;
+  opacity: 1 !important;
+  transition: background-color 0.3s ease;
+}
+
+.swal2-confirm-custom:hover {
+  background-color: #2563eb !important;
+  opacity: 1 !important;
+}
+
+/* Ensure the delete button on the edge is clickable */
+.react-flow__edge .react-flow__edge-interaction,
+.react-flow__edges foreignObject {
+  pointer-events: all !important;
+}
+
+.react-flow__edges g {
+  z-index: 3 !important;
+}
+
+.full_screen_loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.6);
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(100, 100, 100, 0.6) transparent;
+}
+
+/* Change OK button color in DatePicker */
+.ant-picker-ok .ant-btn {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.ant-picker-ok .ant-btn:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
