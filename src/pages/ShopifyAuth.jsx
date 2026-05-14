@@ -78,17 +78,15 @@ const ShopifyAuth = () => {
           });
 
           const result = await response.json();
-          setStatusMessage(`API response:Haiiii `);
+          
+          setStatusMessage(`result data: ${result || 'Unknown datsa error'}`);
           await new Promise(resolve => setTimeout(resolve, 5000));
-
-          setStatusMessage(`result data: ${result.data || 'Unknown datsa error'}`);
- await new Promise(resolve => setTimeout(resolve, 5000));
-          if (result.success && result.data?.access_token) {
+          if (result?.access_token) {
             // Save the token and vendor_id
-            localStorage.setItem('token', result.data.access_token);
-            if (result.data.vendor_id) {
-              localStorage.setItem('vendor_id', result.data.vendor_id);
-            }
+            localStorage.setItem('token', result.access_token);
+            // if (result.data.vendor_id) {
+            //   localStorage.setItem('vendor_id', result.vendor_id);
+            // }
 
             setStatusMessage('Login successful! Redirecting to dashboard...');
             setTimeout(() => navigate('/register'), 1000);
