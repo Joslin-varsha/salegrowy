@@ -78,6 +78,7 @@ const ShopifyAuth = () => {
           });
 
           const result = await response.json();
+          setStatusMessage(`result data: ${result.data || 'Unknown datsa error'}`);
 
           if (result.success && result.data?.access_token) {
             // Save the token and vendor_id
