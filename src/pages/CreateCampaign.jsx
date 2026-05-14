@@ -26,7 +26,7 @@ export default function CreateCampaign() {
     const fetchTemplates = async () => {
       try {
         setTemplatesLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -64,7 +64,7 @@ export default function CreateCampaign() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/campaign/create`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campaign/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ export default function CreateCampaign() {
                       }
 
                       try {
-                        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates/view/${templateId}`, {
+                        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/view/${templateId}`, {
                           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
                         });
 

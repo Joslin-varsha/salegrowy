@@ -130,7 +130,7 @@ export default function CreateWhatsAppTemplate() {
     }
 
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates/create`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: JSON.stringify({ name: formData.name, category: formData.category, language: formData.language, components: components })

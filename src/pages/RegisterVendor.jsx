@@ -79,7 +79,7 @@ export default function RegisterVendor() {
       setApiMessage({ type: '', text: '' });
 
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/vendor/register`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

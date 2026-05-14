@@ -18,10 +18,14 @@ const ShopifyAuth = () => {
         if (shop) {
           try {
             setStatusMessage('Connecting to your store...');
-            const response = await fetch("http://52.66.85.100:3000/api/vendor/getUrlLink", {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ shopLink: shop })
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/getUrlLink`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                shopLink: shop
+              })
             });
 
             const result = await response.json();
@@ -57,13 +61,13 @@ const ShopifyAuth = () => {
 
         try {
           setStatusMessage('Finalizing authentication...');
-          
-          const response = await fetch("http://52.66.85.100:3000/api/vendor/getShopifyAccessToken", {
+
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/getShopifyAccessToken`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
               shopLink: shopLink,
-              code: code 
+              code: code
             })
           });
 
@@ -75,7 +79,7 @@ const ShopifyAuth = () => {
             if (result.data.vendor_id) {
               localStorage.setItem('vendor_id', result.data.vendor_id);
             }
-            
+
             setStatusMessage('Login successful! Redirecting to dashboard...');
             setTimeout(() => navigate('/dashboard'), 1000);
           } else {

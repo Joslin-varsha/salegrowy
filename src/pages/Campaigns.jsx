@@ -19,7 +19,7 @@ export default function Campaigns() {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/campaign/list`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campaign/list`, {
           method: 'POST', // Assuming POST because of your { "page": 1 } payload body in MessageLog, adjust if GET
           headers: {
             'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export default function Campaigns() {
     setShowViewModal(true);
     setSelectedCampaign(null);
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/campaign/view/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campaign/view/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });

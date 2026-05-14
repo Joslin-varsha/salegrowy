@@ -110,7 +110,7 @@ export default function CreateContact() {
       const uniqueTags = [...new Set(tagsArray)];
 
       // ✅ STEP 4: Create contact
-      const response = await fetch(`http://52.66.85.100:3000/api/contact/add`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -149,7 +149,7 @@ export default function CreateContact() {
   const [optOut, setOptOut] = useState(false);
 
   useEffect(() => {
-    fetch(`http://52.66.85.100:3000/api/contact/groups`, {
+    fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }

@@ -24,7 +24,7 @@ export default function Contacts() {
   useEffect(() => {
     const fetchContacts = async () => {
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/contact/list`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/list`, {
           method: 'GET',
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -56,7 +56,7 @@ export default function Contacts() {
 
     const fetchGroups = async () => {
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/contact/groups`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (!response.ok) return;
@@ -107,12 +107,12 @@ export default function Contacts() {
     const id = contact._id;
     setViewLoading(true);
     setShowViewModal(true);
-    
+
     // Immediately set data from the list so the user sees real data instantly
     setViewContactDetails(contact);
 
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/contact/view/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/view/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
@@ -332,11 +332,11 @@ export default function Contacts() {
       {showViewModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '800px', maxWidth: '95%', maxHeight: '95vh', overflowY: 'auto', position: 'relative' }}>
-            
+
             {/* Modal Header */}
             <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#64748b', fontWeight: 500 }}>Contact Details</h3>
-              <button 
+              <button
                 onClick={() => setShowViewModal(false)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1' }}
               >
@@ -349,7 +349,7 @@ export default function Contacts() {
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Loading details...</div>
               ) : viewContactDetails ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                  
+
                   {/* Basic Info Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                     <div className="view-field">
@@ -387,11 +387,11 @@ export default function Contacts() {
                       {(() => {
                         const groupsVal = viewContactDetails.groups;
                         if (!groupsVal) return <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>No groups assigned</span>;
-                        
-                        const groupsArray = Array.isArray(groupsVal) 
-                          ? groupsVal 
+
+                        const groupsArray = Array.isArray(groupsVal)
+                          ? groupsVal
                           : (typeof groupsVal === 'string' ? groupsVal.split(',') : [groupsVal]);
-                        
+
                         return groupsArray.map((g, i) => (
                           <span key={i} style={{ backgroundColor: '#94a3b8', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
                             {String(g).trim()}
@@ -426,7 +426,7 @@ export default function Contacts() {
 
             {/* Modal Footer */}
             <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
-              <button 
+              <button
                 onClick={() => setShowViewModal(false)}
                 style={{ padding: '0.6rem 1.5rem', background: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
               >

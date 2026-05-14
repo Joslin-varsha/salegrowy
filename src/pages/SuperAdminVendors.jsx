@@ -10,7 +10,7 @@ export default function SuperAdminVendors() {
     const fetchVendors = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/superadmin/vendors`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/superadmin/vendors`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

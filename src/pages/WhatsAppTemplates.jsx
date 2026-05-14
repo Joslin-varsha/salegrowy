@@ -23,7 +23,7 @@ export default function WhatsAppTemplates() {
     const fetchTemplates = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -57,7 +57,7 @@ export default function WhatsAppTemplates() {
     setPreviewLoading(true);
     setSelectedTemplate({ loading: true });
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/templates/view/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/view/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 

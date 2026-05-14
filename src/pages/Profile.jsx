@@ -39,13 +39,13 @@ export default function Profile() {
         const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
 
         // 1. Fetch Personal Profile
-        const profileRes = await fetch(`http://52.66.85.100:3000/api/vendor/profile`, {
+        const profileRes = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/profile`, {
           method: 'POST',
           headers
         });
 
         // 2. Fetch Business Details
-        const detailsRes = await fetch(`http://52.66.85.100:3000/api/vendor/details`, {
+        const detailsRes = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/details`, {
           method: 'POST',
           headers
         });

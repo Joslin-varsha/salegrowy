@@ -15,7 +15,7 @@ export default function MessageLog() {
     const fetchLogs = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/message-log/list`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/message-log/list`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export default function MessageLog() {
     setShowViewModal(true);
     setSelectedLog(null);
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/message-log/view/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/message-log/view/${id}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });

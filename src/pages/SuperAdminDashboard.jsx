@@ -41,7 +41,7 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/superadmin/dashboard`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/superadmin/dashboard`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });

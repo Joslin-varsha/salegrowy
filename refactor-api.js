@@ -24,8 +24,8 @@ walk(srcDir, (filePath) => {
         if (
             content.includes('fetch(\'/api/') ||
             content.includes('fetch(`/api/') ||
-            content.includes('fetch("http://52.66.85.100:3000/api/') ||
-            content.includes('fetch(\'http://52.66.85.100:3000/api/')
+            content.includes('fetch("${import.meta.env.VITE_API_URL}/api/') ||
+            content.includes('fetch(\'${import.meta.env.VITE_API_URL}/api/')
         ) {
 
             console.log(`Processing ${filePath}`);
@@ -58,9 +58,9 @@ walk(srcDir, (filePath) => {
             }
 
             // Replace fetch calls
-            content = content.replace(/fetch\(\s*['"]\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
-            content = content.replace(/fetch\(\s*`\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
-            content = content.replace(/fetch\(\s*['"]http:\/\/192\.168\.100\.144:3000\/api\//g, "fetch(`http://52.66.85.100:3000/api/");
+            content = content.replace(/fetch\(\s*['"]\/api\//g, "fetch(`${import.meta.env.VITE_API_URL}/api/");
+            content = content.replace(/fetch\(\s*`\/api\//g, "fetch(`${import.meta.env.VITE_API_URL}/api/");
+            content = content.replace(/fetch\(\s*['"]http:\/\/192\.168\.100\.144:3000\/api\//g, "fetch(`${import.meta.env.VITE_API_URL}/api/");
 
             // Also replace '/api/vendor/profile', etc in case of fetch(url, ...)
             // To be safe, let's just use the regex above which handles the standard case

@@ -204,7 +204,7 @@ const Topbar = ({ isLargeScreen }) => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`http://52.66.85.100:3000/api/vendor/profile`,
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/profile`,
           {
             method: 'POST',
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

@@ -22,7 +22,7 @@ export default function Settings() {
   useEffect(() => {
     const fetchSetupDetails = async () => {
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/setup-details`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {
@@ -50,7 +50,7 @@ export default function Settings() {
   const handleEmbeddedSignup = async (payload) => {
     try {
       // payload expects: { request_code: "", waba_id: "", phone_number_id: "" }
-      const response = await fetch(`http://52.66.85.100:3000/api/whatsapp/embedded-signup`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/embedded-signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

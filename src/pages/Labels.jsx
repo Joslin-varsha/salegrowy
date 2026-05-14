@@ -13,7 +13,7 @@ export default function Labels() {
 
   const fetchLabels = async () => {
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/contact/labels`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -44,7 +44,7 @@ export default function Labels() {
     if (!newLabel.title) return;
     setCreating(true);
     try {
-      const response = await fetch(`http://52.66.85.100:3000/api/contact/labels/add`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

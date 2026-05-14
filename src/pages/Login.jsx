@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../config';
 import { useState } from 'react';
 import { MessageCircle, User, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { p } from 'framer-motion/client';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function Login() {
       // Removed setApiMessage({ type: '', text: '' }); to prevent form "blinking" / layout shifting
 
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/vendor/login`, {
+        const response = await fetch( `${import.meta.env.VITE_API_URL}/api/vendor/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

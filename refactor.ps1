@@ -35,13 +35,13 @@ foreach ($f in $files) {
     }
     
     # Replace single quote
-    $content = $content -replace "fetch\('/api/", "fetch(``http://52.66.85.100:3000/api/"
+    $content = $content -replace "fetch\('/api/", "fetch(``${import.meta.env.VITE_API_URL}/api/"
     # Replace double quote
-    $content = $content -replace "fetch\(`"/api/", "fetch(``http://52.66.85.100:3000/api/"
+    $content = $content -replace "fetch\(`"/api/", "fetch(``${import.meta.env.VITE_API_URL}/api/"
     # Replace backtick
-    $content = $content -replace "fetch\(`(`/api/", "fetch(``http://52.66.85.100:3000/api/"
+    $content = $content -replace "fetch\(`(`/api/", "fetch(``${import.meta.env.VITE_API_URL}/api/"
     # Replace the absolute one
-    $content = $content -replace "fetch\('http://192\.168\.100\.144:3000/api/", "fetch(``http://52.66.85.100:3000/api/"
+    $content = $content -replace "fetch\('http://192\.168\.100\.144:3000/api/", "fetch(``${import.meta.env.VITE_API_URL}/api/"
 
     Set-Content -Path $path -Value $content -Encoding Default
     Write-Host "Processed $f"

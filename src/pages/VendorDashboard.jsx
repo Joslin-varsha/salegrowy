@@ -36,7 +36,7 @@ export default function VendorDashboard() {
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await fetch(`http://52.66.85.100:3000/api/vendor/dashboard`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/dashboard`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -10,7 +10,7 @@ export default function SuperAdminCampaigns() {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://52.66.85.100:3000/api/superadmin/campaigns`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/superadmin/campaigns`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
