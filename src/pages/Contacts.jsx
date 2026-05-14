@@ -193,16 +193,33 @@ export default function Contacts() {
           Select All
         </button>
         <div style={{ position: 'relative' }}>
-          <button onClick={() => setShowBulkDropdown(!showBulkDropdown)} style={{ backgroundColor: '#f43f5e', color: 'white', border: 'none', padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <button 
+            onClick={() => selected.length > 0 && setShowBulkDropdown(!showBulkDropdown)} 
+            style={{ 
+              backgroundColor: '#f43f5e', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.4rem 0.75rem', 
+              fontSize: '0.75rem', 
+              fontWeight: 600, 
+              borderRadius: '4px', 
+              cursor: selected.length > 0 ? 'pointer' : 'default', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.25rem',
+              opacity: selected.length > 0 ? 1 : 0.5,
+              pointerEvents: selected.length > 0 ? 'auto' : 'none'
+            }}
+          >
             Bulk Actions <span style={{ fontSize: '0.6rem' }}>▼</span>
           </button>
           {showBulkDropdown && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '150px' }}>
-              <button onClick={() => { deleteBulk(); setShowBulkDropdown(false); }} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
-                Delete Selected
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '280px', overflow: 'hidden' }}>
+              <button onClick={() => { deleteBulk(); setShowBulkDropdown(false); }} style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#1e293b', whiteSpace: 'nowrap' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
+                Delete Selected Contacts
               </button>
-              <button onClick={() => { setShowGroupModal(true); setShowBulkDropdown(false); }} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
-                Assign Group
+              <button onClick={() => { setShowGroupModal(true); setShowBulkDropdown(false); }} style={{ display: 'block', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#1e293b', whiteSpace: 'nowrap' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
+                Assign Group to Selected Contacts
               </button>
             </div>
           )}
@@ -266,7 +283,11 @@ export default function Contacts() {
                   <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap' }}>{contact.phone_number}</td>
                   <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>{contact.language_code}</td>
                   <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap' }}>{new Date(contact.created_at).toLocaleString()}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>{contact.groups}</td>
+                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>
+                    {Array.isArray(contact.groups) 
+                      ? contact.groups.map(g => typeof g === 'object' ? g.title : g).join(', ') 
+                      : (contact.groups || '')}
+                  </td>
                   <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>{contact.tags}</td>
                   <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>
                     <span style={{ backgroundColor: contact.marketing === 'Opted In' ? 'rgba(37, 211, 102, 0.1)' : '#f1f5f9', color: contact.marketing === 'Opted In' ? 'var(--wa-green)' : '#64748b', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600 }}>{contact.whatsapp_opt_out_text}</span>
@@ -305,24 +326,53 @@ export default function Contacts() {
 
       {/* Assign Group Modal */}
       {showGroupModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.25rem', color: '#1e293b', fontWeight: 700 }}>Assign Group</h3>
-            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>Select a group to assign to {selected.length} contacts.</p>
-            <select
-              className="form-input"
-              style={{ width: '100%', padding: '0.6rem 1rem', marginBottom: '1.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', appearance: 'none', backgroundColor: '#fff' }}
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value)}
-            >
-              <option value="">Select Group...</option>
-              {groups.map(g => (
-                <option key={g._id} value={g._id.toString()}>{g.title}</option>
-              ))}
-            </select>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => setShowGroupModal(false)} style={{ padding: '0.5rem 1rem', background: '#e2e8f0', color: '#475569', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>Cancel</button>
-              <button className="btn btn-primary" onClick={assignGroup} style={{ padding: '0.5rem 1rem', background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }} disabled={!selectedGroup}>Assign</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(2px)' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '600px', maxWidth: '90%', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: '1rem 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#475569', fontWeight: 600 }}>Assign Groups to Selected Contacts</h3>
+              <button 
+                onClick={() => setShowGroupModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '2rem 1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.9rem', color: '#475569', fontWeight: 500, marginBottom: '0.5rem' }}>Groups</label>
+              <div style={{ position: 'relative' }}>
+                <select
+                  style={{ width: '100%', padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.9rem', appearance: 'none', backgroundColor: '#fff', outline: 'none' }}
+                  value={selectedGroup}
+                  onChange={(e) => setSelectedGroup(e.target.value)}
+                >
+                  <option value="">Select Groups</option>
+                  {groups.map(g => (
+                    <option key={g._id} value={g._id.toString()}>{g.title}</option>
+                  ))}
+                </select>
+                <div style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#94a3b8', fontSize: '0.6rem' }}>▼</div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
+              <button 
+                onClick={assignGroup} 
+                style={{ padding: '0.6rem 1.5rem', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                disabled={!selectedGroup}
+              >
+                Submit
+              </button>
+              <button 
+                onClick={() => setShowGroupModal(false)} 
+                style={{ padding: '0.6rem 1.5rem', background: '#64748b', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -386,17 +436,23 @@ export default function Contacts() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                       {(() => {
                         const groupsVal = viewContactDetails.groups;
-                        if (!groupsVal) return <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>No groups assigned</span>;
+                        if (!groupsVal || (Array.isArray(groupsVal) && groupsVal.length === 0)) {
+                          return <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>No groups assigned</span>;
+                        }
 
                         const groupsArray = Array.isArray(groupsVal)
                           ? groupsVal
                           : (typeof groupsVal === 'string' ? groupsVal.split(',') : [groupsVal]);
 
-                        return groupsArray.map((g, i) => (
-                          <span key={i} style={{ backgroundColor: '#94a3b8', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                            {String(g).trim()}
-                          </span>
-                        ));
+                        return groupsArray.map((g, i) => {
+                          const name = typeof g === 'object' ? (g.title || g.name || 'Unknown') : String(g).trim();
+                          if (!name) return null;
+                          return (
+                            <span key={i} style={{ backgroundColor: '#94a3b8', color: 'white', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                              {name}
+                            </span>
+                          );
+                        });
                       })()}
                     </div>
                   </div>

@@ -44,6 +44,7 @@ const Sidebar = () => {
         { text: 'Flows', path: '/dashboard/bot/flows' }
       ]
     },
+    { icon: User, text: 'Subscription Plans', path: '/dashboard/subscription' },
     { icon: SettingsIcon, text: 'Settings', path: '/dashboard/settings' },
   ];
 

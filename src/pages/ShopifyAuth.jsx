@@ -16,6 +16,9 @@ const ShopifyAuth = () => {
     if (location.pathname === '/shopify') {
       const getAuthLink = async () => {
         if (shop) {
+          // Save the shop link to localStorage for future use (like subscriptions)
+          localStorage.setItem('shop_link', shop);
+
           try {
             setStatusMessage('Connecting to your store...');
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/getUrlLink`, {
@@ -31,8 +34,7 @@ const ShopifyAuth = () => {
             const result = await response.json();
 
             if (result.success && result.data?.urlLink) {
-             
-                window.location.href = urlLink;
+                window.location.href = result.data.urlLink;
             } else {
               setStatusMessage('Failed to get authorization link. Please try again.');
             }
@@ -53,6 +55,10 @@ const ShopifyAuth = () => {
       const finalizeAuth = async () => {
         const code = params.get('code');
         const shopLink = params.get('shop');
+
+        if (shopLink) {
+          localStorage.setItem('shop_link', shopLink);
+        }
 
         if (!code) {
           setStatusMessage('No authorization code received.');

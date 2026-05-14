@@ -24,6 +24,8 @@ import AIAgent from "./aiagent/aiagent";
 import FlowChatbotUI from "./chatbot/FlowChatbotUI";
 import BotFlows from './pages/BotFlows';
 import ShopifyAuth from './pages/ShopifyAuth';
+import Subscription from './pages/Subscription';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
 
 function App() {
   return (
@@ -61,6 +63,7 @@ function App() {
           <Route path="whatsapp-templates/create" element={<CreateWhatsAppTemplate />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="subscription" element={<Subscription />} />
           <Route path="agent" element={<AIAgent />} />
           <Route path="chatflow" element={<FlowChatbotUI />} />
           <Route path="bot/flows" element={<BotFlows />} />
@@ -72,6 +75,9 @@ function App() {
           <Route path="vendors" element={<SuperAdminVendors />} />
           <Route path="campaigns" element={<SuperAdminCampaigns />} />
         </Route>
+
+        {/* Subscription Success (Full Screen) */}
+        <Route path="/subscription-success" element={<SubscriptionSuccess />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
