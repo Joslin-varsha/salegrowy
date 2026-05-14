@@ -82,7 +82,7 @@ const ShopifyAuth = () => {
           await new Promise(resolve => setTimeout(resolve, 5000));
 
           setStatusMessage(`result data: ${result.data || 'Unknown datsa error'}`);
-
+ await new Promise(resolve => setTimeout(resolve, 5000));
           if (result.success && result.data?.access_token) {
             // Save the token and vendor_id
             localStorage.setItem('token', result.data.access_token);
