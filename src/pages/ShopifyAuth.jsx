@@ -90,7 +90,7 @@ const ShopifyAuth = () => {
             setStatusMessage('Login successful! Redirecting to dashboard...');
             setTimeout(() => navigate('/register'), 1000);
           } else {
-            setStatusMessage(`Finalization failed: ${result.message || 'Unknown error'}`);
+            setStatusMessage(`Finalization failed11: ${result.message || 'Unknown error'}`);
           }
         } catch (error) {
           console.error("Callback Error:", error);
