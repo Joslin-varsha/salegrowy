@@ -31,8 +31,8 @@ const ShopifyAuth = () => {
             const result = await response.json();
 
             if (result.success && result.data?.urlLink) {
-              // Redirect browser to the URL provided by your API
-              window.location.href = result.data.urlLink;
+             
+                window.location.href = urlLink;
             } else {
               setStatusMessage('Failed to get authorization link. Please try again.');
             }
@@ -73,15 +73,15 @@ const ShopifyAuth = () => {
 
           const result = await response.json();
 
-          if (result.success && result.data?.token) {
+          if (result.success && result.data?.access_token) {
             // Save the token and vendor_id
-            localStorage.setItem('token', result.data.token);
+            localStorage.setItem('token', result.data.access_token);
             if (result.data.vendor_id) {
               localStorage.setItem('vendor_id', result.data.vendor_id);
             }
 
             setStatusMessage('Login successful! Redirecting to dashboard...');
-            setTimeout(() => navigate('/dashboard'), 1000);
+            setTimeout(() => navigate('/register'), 1000);
           } else {
             setStatusMessage(`Finalization failed: ${result.message || 'Unknown error'}`);
           }
