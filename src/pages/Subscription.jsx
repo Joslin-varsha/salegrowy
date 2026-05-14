@@ -11,24 +11,15 @@ const Subscription = () => {
         const vId = localStorage.getItem('vendor_id') || '';
         let sLink = localStorage.getItem('shop_link') || '';
 
-        // Check URL params first
-        const urlParams = new URLSearchParams(window.location.search);
-        const shopParam = urlParams.get('shop');
-        if (shopParam) {
-          sLink = shopParam;
-          localStorage.setItem('shop_link', shopParam);
-        }
-
-        // Fetch business details to get the website/shopLink
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/details`, {
+        // Fetch profile to get shopLink (website) if missing
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/createSubscription`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         const result = await res.json();
-        
-        if (result.success && result.data) {
-          sLink = result.data.website || result.data.shopLink || sLink;
-          if (sLink) localStorage.setItem('shop_link', sLink);
+
+        if (result.success) {
+          sLink = result.data.user.website || result.data.user.shopLink || sLink;
         }
 
         setUserData({ vendor_id: vId, shopLink: sLink });
@@ -43,20 +34,17 @@ const Subscription = () => {
   const handleBuyPlan = async (planName) => {
     setLoadingPlan(planName);
     try {
-      // Refresh shopLink from localStorage just in case state is stale
-      const currentShopLink = userData.shopLink || localStorage.getItem('shop_link') || '';
-
       const payload = {
-        shopLink: currentShopLink,
+        shopLink: userData.shopLink,
         plan: planName.toLowerCase(),
-        vendor_id: userData.vendor_id || localStorage.getItem('vendor_id') || ''
+        vendor_id: userData.vendor_id
       };
-      
+
       console.log("Initiating subscription with payload:", payload);
 
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/createSubscription`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
@@ -64,7 +52,7 @@ const Subscription = () => {
       });
 
       const result = await response.json();
-      
+
       if (result.success && result.confirmationUrl) {
         // Open the Shopify confirmation URL
         window.location.href = result.confirmationUrl;
@@ -152,8 +140,8 @@ const Subscription = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden shadow-sm transition-all hover:shadow-md ${plan.isPopular ? 'border-[#22c55e] border-2 relative' : ''}`}
             >
               {plan.isPopular && (
@@ -161,13 +149,13 @@ const Subscription = () => {
                   Popular
                 </div>
               )}
-              
+
               <div className="p-4 text-center border-b border-slate-100">
                 <div className="inline-flex items-center justify-center p-2 bg-slate-50 rounded-lg mb-2">
                   {plan.icon}
                 </div>
                 <h3 className="text-sm font-bold text-slate-900">{plan.name}</h3>
-                
+
                 <div className="mt-2">
                   <div className="text-lg font-bold text-rose-500">{plan.price || plan.monthlyPrice}</div>
                   {plan.duration && <div className="text-[10px] text-slate-400">{plan.duration}</div>}

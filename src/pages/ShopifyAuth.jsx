@@ -80,7 +80,7 @@ const ShopifyAuth = () => {
           const result = await response.json();
           setStatusMessage(`result data: ${result.data || 'Unknown datsa error'}`);
 
-          if (result.success && result.data?.access_token) {
+         // if (result.success && result.data?.access_token) {
             // Save the token and vendor_id
             localStorage.setItem('token', result.data.access_token);
             if (result.data.vendor_id) {
@@ -89,9 +89,9 @@ const ShopifyAuth = () => {
 
             setStatusMessage('Login successful! Redirecting to dashboard...');
             setTimeout(() => navigate('/register'), 1000);
-          } else {
-            setStatusMessage(`Finalization failed11: ${result.data || 'Unknown error'}`);
-          }
+          // } else {
+          //   setStatusMessage(`Finalization failed11: ${result.data || 'Unknown error'}`);
+          // }
         } catch (error) {
           console.error("Callback Error:", error);
           setStatusMessage('Error processing authentication callback. Please try again.');
