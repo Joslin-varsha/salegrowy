@@ -35,9 +35,7 @@ const Subscription = () => {
     setLoadingPlan(planName);
     try {
       const payload = {
-        shopLink: userData.shopLink,
-        plan: planName.toLowerCase(),
-        vendor_id: userData.vendor_id
+        plan: planName.toLowerCase()
       };
 
       console.log("Initiating subscription with payload:", payload);
