@@ -95,7 +95,7 @@ export default function RegisterVendor() {
             mobileNumber: formData.mobile,
             password: formData.password,
             confirmPassword: formData.confirmPassword,
-            shopifyTokenId: shopifyTokenId || null
+            shopifyTokenId: shopifyTokenId || 0
           })
         });
 
