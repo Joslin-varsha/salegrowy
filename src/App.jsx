@@ -25,6 +25,7 @@ import FlowChatbotUI from "./chatbot/FlowChatbotUI";
 import BotFlows from './pages/BotFlows';
 import ShopifyAuth from './pages/ShopifyAuth';
 import Subscription from './pages/Subscription';
+import ShopifySubscription from './pages/ShopifySubscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
         {/* Shopify Auth Routes */}
         <Route path="/shopify" element={<ShopifyAuth />} />
         <Route path="/callback" element={<ShopifyAuth />} />
+        <Route path="/shopify-subscription" element={<ShopifySubscription />} />
 
         {/* Auth routes with Standard Header Layout */}
         <Route element={

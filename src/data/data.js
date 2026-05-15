@@ -134,7 +134,7 @@ const Data = {
         },
     ],
     testCredentials: {
-        vendor_id: '19',
+        vendor_id: '36',
         vendor_uid: 'ed61ab79-3bc7-4166-b552-7defa8cd1c94',
         auto_flow_id: '149',
         bot_flow_type: 'Normal',

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { MessageCircle, Building, User, Mail, Smartphone, Lock, CheckCircle, UserPlus, CreditCard } from 'lucide-react';
 
 export default function RegisterVendor() {
   const location = useLocation();
+  const navigate = useNavigate();
   const shopifyTokenId = location.state?.shopifyTokenId;
 
   const [formData, setFormData] = useState({
@@ -102,9 +103,26 @@ export default function RegisterVendor() {
         const data = await response.json();
 
         if (response.ok) {
-          setApiMessage({ type: 'success', text: 'Registration successful!' });
+          setApiMessage({ type: 'success', text: 'Registration successful! Redirecting to subscription...' });
           console.log("Register Success", data);
-          // Optional: you can redirect the user here or reset the form
+          
+          // Capture the new vendorId exactly as per your backend response
+          const newVendorId = data.data?.vendorId || data.data?._id || data.data?.id;
+          console.log("Captured Vendor ID:", newVendorId);
+
+          if (newVendorId) {
+             localStorage.setItem('vendor_id', newVendorId);
+          }
+          
+          // Redirect after 1.5 seconds
+          setTimeout(() => {
+            navigate('/shopify-subscription', { 
+              state: { 
+                vendorId: newVendorId || localStorage.getItem('vendor_id'),
+                token: data.token || data.data?.token
+              } 
+            });
+          }, 1500);
         } else {
           setApiMessage({ type: 'error', text: data.message || 'Registration failed. Please try again.' });
         }
