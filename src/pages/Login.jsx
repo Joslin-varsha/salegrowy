@@ -2,7 +2,6 @@ import { API_BASE_URL } from '../config';
 import { useState } from 'react';
 import { MessageCircle, User, Lock, LogIn } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { p } from 'framer-motion/client';
 
 export default function Login() {
   const navigate = useNavigate();

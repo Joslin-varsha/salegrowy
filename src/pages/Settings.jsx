@@ -23,6 +23,7 @@ export default function Settings() {
     const fetchSetupDetails = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
+          method: 'POST', 
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         if (response.ok) {

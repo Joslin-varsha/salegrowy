@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Edit, Trash2, GitBranch, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -17,19 +17,43 @@ export default function BotFlows() {
     status: 'Inactive'
   });
 
-  // Mock data based on images
-  const [flowsData, setFlowsData] = useState([
-    { id: 1, title: 'Welcome Message', trigger: 'Hi, hello, Can, May', status: 'Inactive' },
-    { id: 2, title: 'Lucky Draw', trigger: 'Hey Mayilo! What are today\'s offers?, Hi, Hii, Hello, helo, hi', status: 'Inactive' },
-    { id: 3, title: 'dsada', trigger: 'Place Order', status: 'Inactive' },
-    { id: 4, title: 'Hello guys', trigger: 'Hii, welcome to salrgrowy', status: 'Inactive' },
-    { id: 5, title: 'normal enquiries', trigger: 'Hi, Hello,', status: 'Inactive' },
-    { id: 6, title: 'Enquiry', trigger: 'How to Proceed to Start My Career.?, Hi! Please let us know your career interest, Yes', status: 'Inactive' },
-    { id: 7, title: 'pincodecheck', trigger: 'pp', status: 'Inactive' },
-    { id: 8, title: 'day2 engage', trigger: 'hh', status: 'Inactive' },
-    { id: 9, title: 'Shopify/woo', trigger: 'Hi, I want to know more', status: 'Inactive' },
-    { id: 10, title: 'Lead generation', trigger: 'Hi, hello, need help with lead generation', status: 'Inactive' },
-  ]);
+  const [flowsData, setFlowsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBots = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/botlist`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Handle both array and single object response
+          const rawData = Array.isArray(result.data) ? result.data : [result.data];
+          
+          const formatted = rawData.map(bot => ({
+            id: bot._id || bot.id,
+            title: bot.title || 'Untitled Bot',
+            trigger: bot.start_trigger || '-',
+            status: bot.status === 1 ? 'Active' : 'Inactive',
+            uid: bot._uid
+          }));
+          
+          setFlowsData(formatted);
+        }
+      } catch (err) {
+        console.error("Error fetching bots:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBots();
+  }, []);
 
   const handleOpenModal = (mode, flow = null) => {
     setModalMode(mode);

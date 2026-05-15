@@ -79,19 +79,24 @@ const ShopifyAuth = () => {
 
           const result = await response.json();
           
-          setStatusMessage(`result data: ${result || 'Unknown datsa error'}`);
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          if (result?.access_token) {
-            // Save the token and vendor_id
-            localStorage.setItem('token', result.access_token);
-            // if (result.data.vendor_id) {
-            //   localStorage.setItem('vendor_id', result.vendor_id);
-            // }
-
-            setStatusMessage('Login successful! Redirecting to dashboard...');
-            setTimeout(() => navigate('/register'), 1000);
+          if (result.success) {
+            if (result.type === 'register') {
+              setStatusMessage('New Shopify store detected. Redirecting to registration...');
+              setTimeout(() => {
+                navigate('/register', { state: { shopifyTokenId: result.shopifyTokenId } });
+              }, 1500);
+            } else if (result.type === 'login') {
+              setStatusMessage('Shopify store recognized. Redirecting to login...');
+              setTimeout(() => {
+                navigate('/');
+              }, 1500);
+            } else {
+              // Fallback for unexpected type
+              setStatusMessage('Authentication successful. Redirecting...');
+              setTimeout(() => navigate('/'), 1500);
+            }
           } else {
-            setStatusMessage(`Finalization failed11: ${result.data || 'Unknown error'}`);
+            setStatusMessage(`Authentication failed: ${result.message || 'Unknown error'}`);
           }
         } catch (error) {
           console.error("Callback Error:", error);

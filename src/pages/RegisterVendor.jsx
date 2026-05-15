@@ -1,8 +1,10 @@
-import { API_BASE_URL } from '../config';
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, Building, User, Mail, Smartphone, Lock, CheckCircle, UserPlus, CreditCard } from 'lucide-react';
 
 export default function RegisterVendor() {
+  const location = useLocation();
+  const shopifyTokenId = location.state?.shopifyTokenId;
 
   const [formData, setFormData] = useState({
     company: '',
@@ -92,7 +94,8 @@ export default function RegisterVendor() {
             email: formData.email,
             mobileNumber: formData.mobile,
             password: formData.password,
-            confirmPassword: formData.confirmPassword
+            confirmPassword: formData.confirmPassword,
+            shopifyTokenId: shopifyTokenId
           })
         });
 
@@ -122,6 +125,24 @@ export default function RegisterVendor() {
           <div className="card-header" style={{ padding: '1rem 1.5rem 0.25rem' }}>
             <MessageCircle size={32} color="var(--wa-green)" />
             <h2 style={{ fontSize: '1.2rem' }}>Register as Vendor/Company</h2>
+            {shopifyTokenId && (
+              <div style={{ 
+                marginLeft: 'auto', 
+                backgroundColor: '#e1f5fe', 
+                color: '#0288d1', 
+                padding: '4px 12px', 
+                borderRadius: '12px', 
+                fontSize: '0.75rem', 
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                border: '1px solid #b3e5fc'
+              }}>
+                <div style={{ width: '8px', height: '8px', backgroundColor: '#0288d1', borderRadius: '50%' }}></div>
+                Shopify Integration Active
+              </div>
+            )}
           </div>
 
           <div className="card-body" style={{ padding: '1rem 1.5rem 1.5rem' }}>

@@ -12,6 +12,7 @@
   "dependencies": {
     "antd": "^6.3.7",
     "axios": "^1.16.0",
+    "crypto-js": "^4.2.0",
     "dayjs": "^1.11.20",
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.577.0",
