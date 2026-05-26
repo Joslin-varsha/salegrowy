@@ -30,7 +30,7 @@ export default function Settings() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
