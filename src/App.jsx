@@ -30,6 +30,7 @@ import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import WhatsAppChat from './pages/WhatsAppChat';
 import SyncProducts from "./pages/SyncProducts";
 import SyncCustomers from "./pages/SyncCustomers";
+import Webhooks from "./pages/Webhooks";
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function App() {
           <Route path="whatsapp-chat" element={<WhatsAppChat />} />
           <Route path="sync-products" element={<SyncProducts />} />
           <Route path="sync-customers" element={<SyncCustomers />} />
+          <Route path="webhooks" element={<Webhooks />} />
         </Route>
 
         {/* Super Admin routes */}

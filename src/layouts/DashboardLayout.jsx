@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon } from 'lucide-react';
+import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook} from 'lucide-react';
 import { SyncOutlined } from '@ant-design/icons';
 
 
@@ -50,6 +50,7 @@ const Sidebar = () => {
     { icon: User, text: 'Subscription Plans', path: '/dashboard/subscription' },
     { icon: SyncOutlined, text: 'Sync Products', path: '/dashboard/sync-products' },
     { icon: SyncOutlined, text: 'Sync Customers', path: '/dashboard/sync-customers' },
+    { icon: Webhook, text: 'Webhooks', path: '/dashboard/webhooks' },
     { icon: SettingsIcon, text: 'Settings', path: '/dashboard/settings' },
    
   ];
