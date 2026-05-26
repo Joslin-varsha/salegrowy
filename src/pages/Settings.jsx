@@ -8,6 +8,7 @@ export default function Settings() {
   const [isConnected, setIsConnected] = useState(false);
   const [setupDetails, setSetupDetails] = useState(null);
   const [isSetupInProcess, setIsSetupInProcess] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
   const phoneNumberIdRef = useRef('');
   const waBaIdRef = useRef('');
 
@@ -39,11 +40,32 @@ export default function Settings() {
             raw_settings: result.raw_settings
           });
           setIsConnected(result.data.is_setup_completed);
+          return result.data.is_setup_completed;
         }
       }
     } catch (err) {
       console.error("Error fetching setup details", err);
     }
+    return false;
+  };
+
+  // Poll setup-details until is_setup_completed becomes true (max 10 attempts, 2s apart)
+  const pollSetupDetails = async () => {
+    setIsPolling(true);
+    const MAX_ATTEMPTS = 10;
+    const DELAY_MS = 2000;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      // Wait before each check (gives backend time to process)
+      await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      const isCompleted = await fetchSetupDetails();
+      if (isCompleted) {
+        setIsPolling(false);
+        return;
+      }
+    }
+    // If still not completed after all attempts, do one final fetch to show whatever state we have
+    await fetchSetupDetails();
+    setIsPolling(false);
   };
 
   useEffect(() => {
@@ -122,8 +144,10 @@ export default function Settings() {
       });
       const result = await response.json();
       if (result.success) {
-        // Re-fetch setup details to update the UI dynamically (no page reload)
-        await fetchSetupDetails();
+        // Backend processes WhatsApp setup asynchronously after embedded-signup.
+        // Poll setup-details until is_setup_completed becomes true instead of
+        // fetching immediately (which would race with backend processing).
+        await pollSetupDetails();
       }
     } catch (err) {
       console.error(err);
@@ -299,7 +323,7 @@ export default function Settings() {
                 <div className="card" style={{ padding: '2rem', display: 'flex', justifyContent: 'center', border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
                   <button 
                     onClick={handleFacebookLogin} 
-                    disabled={isSetupInProcess}
+                    disabled={isSetupInProcess || isPolling}
                     style={{ 
                       backgroundColor: '#1877f2', 
                       color: 'white', 
@@ -311,11 +335,15 @@ export default function Settings() {
                       display: 'flex', 
                       alignItems: 'center', 
                       gap: '0.5rem', 
-                      cursor: isSetupInProcess ? 'not-allowed' : 'pointer',
-                      opacity: isSetupInProcess ? 0.7 : 1
+                      cursor: (isSetupInProcess || isPolling) ? 'not-allowed' : 'pointer',
+                      opacity: (isSetupInProcess || isPolling) ? 0.7 : 1
                     }}
                   >
-                    {isSetupInProcess ? (
+                    {isPolling ? (
+                      <>
+                        <RefreshCw className="animate-spin" size={18} /> Setting up WhatsApp...
+                      </>
+                    ) : isSetupInProcess ? (
                       <>
                         <RefreshCw className="animate-spin" size={18} /> Connecting...
                       </>
