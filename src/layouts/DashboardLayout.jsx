@@ -283,6 +283,14 @@ const Topbar = ({ isLargeScreen }) => {
 export default function DashboardLayout() {
   const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1200);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
 
   // Routes that should be full width without sidebar/topbar
   const isFullWidthRoute = location.pathname === '/dashboard/agent' || location.pathname === '/dashboard/chatflow';

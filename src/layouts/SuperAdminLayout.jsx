@@ -1,21 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Gift, Store, Megaphone, Users, User, Languages, FileText, Settings, ShieldAlert, LogOut, ChevronDown, Bell } from 'lucide-react';
 
 export default function SuperAdminLayout() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth >= 1200);
 
-useEffect(() => {
-  const handleResize = () => {
-    setIsLargeScreen(window.innerWidth >= 1200);
-  };
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
 
-  window.addEventListener('resize', handleResize);
-  return () => window.removeEventListener('resize', handleResize);
-}, []);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLargeScreen(window.innerWidth >= 1200);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const sidebarItems = [
     { icon: LayoutDashboard, text: 'Dashboard', path: '/superadmin' },
