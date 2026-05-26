@@ -29,24 +29,16 @@ export default function Settings() {
   const fetchSetupDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('[Settings] Fetching setup details...');
-      console.log('[Settings] Token exists:', !!token);
-      console.log('[Settings] API URL:', import.meta.env.VITE_API_URL);
-
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
-
-      console.log('[Settings] Response status:', response.status, response.ok);
 
       if (response.ok) {
         const result = await response.json();
-        console.log('[Settings] result.success:', result.success, '| type:', typeof result.success);
-        console.log('[Settings] result.data:', result.data, '| type:', typeof result.data);
-        console.log('[Settings] result keys:', Object.keys(result));
-        console.log('[Settings] is_setup_completed:', result.data?.is_setup_completed);
-
         if (result.data) {
           setSetupDetails({
             ...result.data,
@@ -54,12 +46,7 @@ export default function Settings() {
           });
           setIsConnected(result.data.is_setup_completed);
           return result.data.is_setup_completed;
-        } else {
-          console.warn('[Settings] result.data is missing. Full response:', JSON.stringify(result));
         }
-      } else {
-        const errorText = await response.text();
-        console.error('[Settings] API error response:', response.status, errorText);
       }
     } catch (err) {
       console.error('[Settings] Error fetching setup details', err);
