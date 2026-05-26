@@ -28,23 +28,41 @@ export default function Settings() {
 
   const fetchSetupDetails = async () => {
     try {
+      const token = localStorage.getItem('token');
+      console.log('[Settings] Fetching setup details...');
+      console.log('[Settings] Token exists:', !!token);
+      console.log('[Settings] API URL:', import.meta.env.VITE_API_URL);
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+
+      console.log('[Settings] Response status:', response.status, response.ok);
+
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.data) {
+        console.log('[Settings] result.success:', result.success, '| type:', typeof result.success);
+        console.log('[Settings] result.data:', result.data, '| type:', typeof result.data);
+        console.log('[Settings] result keys:', Object.keys(result));
+        console.log('[Settings] is_setup_completed:', result.data?.is_setup_completed);
+
+        if (result.data) {
           setSetupDetails({
             ...result.data,
             raw_settings: result.raw_settings
           });
           setIsConnected(result.data.is_setup_completed);
           return result.data.is_setup_completed;
+        } else {
+          console.warn('[Settings] result.data is missing. Full response:', JSON.stringify(result));
         }
+      } else {
+        const errorText = await response.text();
+        console.error('[Settings] API error response:', response.status, errorText);
       }
     } catch (err) {
-      console.error("Error fetching setup details", err);
+      console.error('[Settings] Error fetching setup details', err);
     }
     return false;
   };
@@ -143,11 +161,22 @@ export default function Settings() {
         body: JSON.stringify(payload)
       });
       const result = await response.json();
+      console.log('[Settings] Embedded signup result:', result);
+
       if (result.success) {
-        // Backend processes WhatsApp setup asynchronously after embedded-signup.
-        // Poll setup-details until is_setup_completed becomes true instead of
-        // fetching immediately (which would race with backend processing).
-        await pollSetupDetails();
+        // ✅ Immediately show connected screen using data from embedded-signup response
+        // Backend needs time to fully process, so we show connected state right away
+        setIsConnected(true);
+        setSetupDetails(prev => ({
+          ...prev,
+          waba_id: result.data?.wabaId || payload.waba_id || '',
+          phone_number_id: result.data?.phoneNumberId || payload.phone_number_id || '',
+          is_setup_completed: true,
+          setup_completed_at: new Date().toLocaleString()
+        }));
+
+        // Then poll in background for full details (phone numbers, health status, etc.)
+        pollSetupDetails();
       }
     } catch (err) {
       console.error(err);
