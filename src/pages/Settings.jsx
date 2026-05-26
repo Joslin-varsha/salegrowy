@@ -35,7 +35,10 @@ export default function Settings() {
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
-            setSetupDetails(result.data);
+            setSetupDetails({
+              ...result.data,
+              raw_settings: result.raw_settings
+            });
             setIsConnected(result.data.is_setup_completed);
           }
         }
@@ -170,6 +173,36 @@ export default function Settings() {
     });
   };
 
+  // Parse phone numbers from raw_settings
+  let phoneNumbers = [];
+  try {
+    if (setupDetails?.raw_settings?.whatsapp_phone_numbers) {
+      phoneNumbers = JSON.parse(setupDetails.raw_settings.whatsapp_phone_numbers);
+    }
+  } catch (e) {
+    console.error("Error parsing phone numbers:", e);
+  }
+
+  // Find active phone number detail
+  const activePhoneId = setupDetails?.phone_number_id || (phoneNumbers[0]?.id || '');
+  const activePhone = phoneNumbers.find(p => p.id === activePhoneId);
+
+  // Parse health status entities from raw_settings
+  let healthEntities = [];
+  let healthUpdatedAt = '';
+  try {
+    if (setupDetails?.raw_settings?.whatsapp_health_status_data) {
+      const healthData = JSON.parse(setupDetails.raw_settings.whatsapp_health_status_data);
+      const wabaIdKey = setupDetails.waba_id || Object.keys(healthData)[0];
+      if (wabaIdKey && healthData[wabaIdKey]) {
+        healthUpdatedAt = healthData[wabaIdKey].health_status_updated_at_formatted || '';
+        healthEntities = healthData[wabaIdKey].health_data?.health_status?.entities || [];
+      }
+    }
+  } catch (e) {
+    console.error("Error parsing health data:", e);
+  }
+
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
@@ -199,7 +232,7 @@ export default function Settings() {
             <>
               <div style={{ padding: '1.5rem', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px', marginBottom: '2rem' }}>
                 <p style={{ color: 'var(--wa-green)', fontWeight: 700, margin: 0, fontSize: '0.9rem' }}>
-                  WhatsApp API connected using Embedded SignUp on Monday 12th January 2026 4:09:03 pm
+                  WhatsApp API connected using Embedded SignUp on {setupDetails?.setup_completed_at || 'N/A'}
                 </p>
               </div>
 
@@ -209,8 +242,21 @@ export default function Settings() {
                 <div className="card" style={{ padding: '2rem 1.5rem 1.5rem', border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: '8px' }}>
                   <div style={{ maxWidth: '400px' }}>
                     <label style={{ display: 'block', fontSize: '0.85rem', color: '#475569', marginBottom: '0.5rem' }}>Select Default Phone Number</label>
-                    <select className="form-input" style={{ width: '100%', padding: '0.6rem 1rem', border: '1px solid #cbd5e1', borderRadius: '4px', marginBottom: '1rem', appearance: 'auto' }}>
-                      <option value="+91 99520 43116">+91 99520 43116</option>
+                    <select 
+                      className="form-input" 
+                      style={{ width: '100%', padding: '0.6rem 1rem', border: '1px solid #cbd5e1', borderRadius: '4px', marginBottom: '1rem', appearance: 'auto' }}
+                      value={activePhoneId}
+                      readOnly
+                    >
+                      {phoneNumbers.length > 0 ? (
+                        phoneNumbers.map(phone => (
+                          <option key={phone.id} value={phone.id}>
+                            {phone.display_phone_number} ({phone.verified_name})
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">No phone numbers found</option>
+                      )}
                     </select>
                     <button style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1.5rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Save</button>
                   </div>
@@ -402,19 +448,19 @@ export default function Settings() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Phone Number ID</div>
-                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>486627354535571</div>
+                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>{activePhoneId || '-'}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Verified Name</div>
-                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>Mayilo</div>
+                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>{activePhone?.verified_name || 'N/A'}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Display Phone Number</div>
-                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>+91 99520 43116</div>
+                    <div style={{ fontSize: '0.9rem', color: '#475569' }}>{activePhone?.display_phone_number || setupDetails?.display_phone_number || 'N/A'}</div>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Quality Rating</div>
-                    <div style={{ fontSize: '0.9rem', color: '#22c55e', fontWeight: 700 }}>GREEN</div>
+                    <div style={{ fontSize: '0.9rem', color: activePhone?.quality_rating === 'GREEN' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{activePhone?.quality_rating || 'N/A'}</div>
                   </div>
                   <div>
                     <button style={{ backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
@@ -436,38 +482,36 @@ export default function Settings() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>WhatsApp Business ID</div>
-                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? '424009494140172' : '-'}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (setupDetails?.waba_id || '-') : '-'}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>Status as at</div>
-                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? 'Monday 12th January 2026 4:09:52 pm' : '-'}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (healthUpdatedAt || setupDetails?.setup_completed_at || '-') : '-'}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>Overall Health</div>
-                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? 'AVAILABLE' : '-'}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (activePhone?.status || 'CONNECTED') : '-'}</div>
                 </div>
 
-                {isConnected && (
+                {isConnected && healthEntities.length > 0 ? (
+                  <>
+                    {healthEntities.map((entity, index) => (
+                      <div key={index} style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.75rem' }}>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>{entity.entity_type} {entity.id}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700 }}>Can Send Message</div>
+                        <div style={{ fontSize: '0.85rem', color: entity.can_send_message === 'AVAILABLE' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{entity.can_send_message}</div>
+                      </div>
+                    ))}
+                  </>
+                ) : isConnected ? (
                   <>
                     <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.75rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>WABA 424009494140172</div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>WABA {setupDetails?.waba_id || ''}</div>
                       <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700 }}>Can Send Message</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>AVAILABLE</div>
-                    </div>
-
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.75rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>BUSINESS 844299711217749</div>
-                      <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700 }}>Can Send Message</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>AVAILABLE</div>
-                    </div>
-
-                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.75rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>APP</div>
-                      <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700 }}>Can Send Message</div>
-                      <div style={{ fontSize: '0.85rem', color: '#64748b' }}>AVAILABLE</div>
+                      <div style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 700 }}>AVAILABLE</div>
                     </div>
                   </>
-                )}
+                ) : null}
               </div>
 
             </div>
