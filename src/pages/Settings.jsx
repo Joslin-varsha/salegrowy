@@ -25,27 +25,28 @@ export default function Settings() {
   });
 
 
-  useEffect(() => {
-    const fetchSetupDetails = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setSetupDetails({
-              ...result.data,
-              raw_settings: result.raw_settings
-            });
-            setIsConnected(result.data.is_setup_completed);
-          }
+  const fetchSetupDetails = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setSetupDetails({
+            ...result.data,
+            raw_settings: result.raw_settings
+          });
+          setIsConnected(result.data.is_setup_completed);
         }
-      } catch (err) {
-        console.error("Error fetching setup details", err);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching setup details", err);
+    }
+  };
+
+  useEffect(() => {
     fetchSetupDetails();
 
     // Initialize Facebook SDK settings
@@ -121,8 +122,8 @@ export default function Settings() {
       });
       const result = await response.json();
       if (result.success) {
-        // Refresh setup details
-        window.location.reload();
+        // Re-fetch setup details to update the UI dynamically (no page reload)
+        await fetchSetupDetails();
       }
     } catch (err) {
       console.error(err);
