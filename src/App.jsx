@@ -28,6 +28,8 @@ import Subscription from './pages/Subscription';
 import ShopifySubscription from './pages/ShopifySubscription';
 import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import WhatsAppChat from './pages/WhatsAppChat';
+import SyncProducts from "./pages/SyncProducts";
+import SyncCustomers from "./pages/SyncCustomers";
 
 function App() {
   return (
@@ -71,6 +73,8 @@ function App() {
           <Route path="chatflow" element={<FlowChatbotUI />} />
           <Route path="bot/flows" element={<BotFlows />} />
           <Route path="whatsapp-chat" element={<WhatsAppChat />} />
+          <Route path="sync-products" element={<SyncProducts />} />
+          <Route path="sync-customers" element={<SyncCustomers />} />
         </Route>
 
         {/* Super Admin routes */}

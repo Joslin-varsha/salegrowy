@@ -50,7 +50,7 @@ export default function MessageLog() {
       }
     };
     fetchLogs();
-  }, [entriesCount, token]);
+  }, [entriesCount]);
 
   const handleView = async (id) => {
     if (!id) return;

@@ -51,7 +51,7 @@ export default function Campaigns() {
       }
     };
     fetchCampaigns();
-  }, [entriesCount, token]);
+  }, [entriesCount]);
 
   const handleArchive = (index) => {
     const updated = [...campaigns];
