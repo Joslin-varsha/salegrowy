@@ -4,9 +4,16 @@ import { Facebook, ExternalLink, HelpCircle, Check, RefreshCw, Settings as Setti
 
 
 
+const WA_STORAGE_KEY = 'wa_connection_details';
+
 export default function Settings() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [setupDetails, setSetupDetails] = useState(null);
+  // Load saved connection from localStorage immediately (so connected screen shows on refresh)
+  const savedWA = (() => {
+    try { return JSON.parse(localStorage.getItem(WA_STORAGE_KEY)); } catch { return null; }
+  })();
+
+  const [isConnected, setIsConnected] = useState(savedWA?.is_setup_completed === true);
+  const [setupDetails, setSetupDetails] = useState(savedWA || null);
   const [isSetupInProcess, setIsSetupInProcess] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const phoneNumberIdRef = useRef('');
@@ -40,11 +47,15 @@ export default function Settings() {
       if (response.ok) {
         const result = await response.json();
         if (result.data) {
-          setSetupDetails({
-            ...result.data,
-            raw_settings: result.raw_settings
-          });
+          const details = { ...result.data, raw_settings: result.raw_settings };
+          setSetupDetails(details);
           setIsConnected(result.data.is_setup_completed);
+          // Save to localStorage so refresh always shows correct state
+          if (result.data.is_setup_completed) {
+            localStorage.setItem(WA_STORAGE_KEY, JSON.stringify(details));
+          } else {
+            localStorage.removeItem(WA_STORAGE_KEY);
+          }
           return result.data.is_setup_completed;
         }
       }
@@ -152,17 +163,18 @@ export default function Settings() {
 
       if (result.success) {
         // ✅ Immediately show connected screen using data from embedded-signup response
-        // Backend needs time to fully process, so we show connected state right away
-        setIsConnected(true);
-        setSetupDetails(prev => ({
-          ...prev,
+        const basicDetails = {
           waba_id: result.data?.wabaId || payload.waba_id || '',
           phone_number_id: result.data?.phoneNumberId || payload.phone_number_id || '',
           is_setup_completed: true,
           setup_completed_at: new Date().toLocaleString()
-        }));
+        };
+        setIsConnected(true);
+        setSetupDetails(prev => ({ ...prev, ...basicDetails }));
+        // Save to localStorage immediately so refresh keeps connected screen
+        localStorage.setItem(WA_STORAGE_KEY, JSON.stringify(basicDetails));
 
-        // Then poll in background for full details (phone numbers, health status, etc.)
+        // Poll in background for full details (phone numbers, health status, etc.)
         pollSetupDetails();
       }
     } catch (err) {
@@ -327,7 +339,7 @@ export default function Settings() {
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Templates</button>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Contacts</button>
                   <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Create New Campaign</button>
-                  <button onClick={() => setIsConnected(false)} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
+                  <button onClick={() => { setIsConnected(false); setSetupDetails(null); localStorage.removeItem(WA_STORAGE_KEY); }} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
                 </div>
               </div>
             </>
