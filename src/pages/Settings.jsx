@@ -4,12 +4,16 @@ import { Facebook, ExternalLink, HelpCircle, Check, RefreshCw, Settings as Setti
 
 
 
-const WA_STORAGE_KEY = 'wa_connection_details';
+// Returns a per-user localStorage key using the stored token
+const getWAStorageKey = () => {
+  const token = localStorage.getItem('token');
+  return token ? `wa_connection_${token.substring(0, 32)}` : 'wa_connection_guest';
+};
 
 export default function Settings() {
   // Load saved connection from localStorage immediately (so connected screen shows on refresh)
   const savedWA = (() => {
-    try { return JSON.parse(localStorage.getItem(WA_STORAGE_KEY)); } catch { return null; }
+    try { return JSON.parse(localStorage.getItem(getWAStorageKey())); } catch { return null; }
   })();
 
   const [isConnected, setIsConnected] = useState(savedWA?.is_setup_completed === true);
@@ -36,6 +40,7 @@ export default function Settings() {
   const fetchSetupDetails = async () => {
     try {
       const token = localStorage.getItem('token');
+      const storageKey = getWAStorageKey();
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
         method: 'POST',
         headers: {
@@ -50,13 +55,17 @@ export default function Settings() {
           const details = { ...result.data, raw_settings: result.raw_settings };
           setSetupDetails(details);
           setIsConnected(result.data.is_setup_completed);
-          // Save to localStorage so refresh always shows correct state
+          // API is authoritative: save if connected, clear if not
           if (result.data.is_setup_completed) {
-            localStorage.setItem(WA_STORAGE_KEY, JSON.stringify(details));
+            localStorage.setItem(storageKey, JSON.stringify(details));
           } else {
-            localStorage.removeItem(WA_STORAGE_KEY);
+            localStorage.removeItem(storageKey);
+            setIsConnected(false);
+            setSetupDetails(null);
           }
           return result.data.is_setup_completed;
+        } else {
+          // API returned no data — don't touch localStorage (network issue fallback)
         }
       }
     } catch (err) {
@@ -172,7 +181,7 @@ export default function Settings() {
         setIsConnected(true);
         setSetupDetails(prev => ({ ...prev, ...basicDetails }));
         // Save to localStorage immediately so refresh keeps connected screen
-        localStorage.setItem(WA_STORAGE_KEY, JSON.stringify(basicDetails));
+        localStorage.setItem(getWAStorageKey(), JSON.stringify(basicDetails));
 
         // Poll in background for full details (phone numbers, health status, etc.)
         pollSetupDetails();
@@ -265,13 +274,6 @@ export default function Settings() {
           Settings
         </h1>
 
-        {/* Development Toggle */}
-        <button
-          onClick={() => setIsConnected(!isConnected)}
-          style={{ backgroundColor: isConnected ? '#ef4444' : '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}
-        >
-          {isConnected ? 'Simulate Disconnect' : 'Simulate Connect'}
-        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', alignItems: 'flex-start' }}>
@@ -339,7 +341,7 @@ export default function Settings() {
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Templates</button>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Contacts</button>
                   <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Create New Campaign</button>
-                  <button onClick={() => { setIsConnected(false); setSetupDetails(null); localStorage.removeItem(WA_STORAGE_KEY); }} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
+                  <button onClick={() => { setIsConnected(false); setSetupDetails(null); localStorage.removeItem(getWAStorageKey()); }} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
                 </div>
               </div>
             </>
