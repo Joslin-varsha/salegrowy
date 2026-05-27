@@ -127,8 +127,19 @@ export default function WhatsAppChat() {
         String(selectedChatRef.current._id) === String(data.contactUid)
       );
 
+      // Robust check for incoming message event (handles boolean, number, string, or missing isNewIncomingMessage property)
+      const isIncoming = data.isNewIncomingMessage === true || 
+                         data.isNewIncomingMessage === 1 || 
+                         String(data.isNewIncomingMessage) === '1' || 
+                         String(data.isNewIncomingMessage) === 'true' ||
+                         (data.isNewIncomingMessage !== false && 
+                          data.isNewIncomingMessage !== 0 && 
+                          data.isNewIncomingMessage !== 'false' && 
+                          data.isNewIncomingMessage !== '0' && 
+                          !data.message_status);
+
       // 1. If it's a new incoming message and it's the active chat, fetch updated history
-      if (data.isNewIncomingMessage && isCurrentChat) {
+      if (isIncoming && isCurrentChat) {
         fetchHistorySilent(selectedChatRef.current);
       }
 
@@ -152,7 +163,7 @@ export default function WhatsAppChat() {
         chatItem.last_message = data.contactDescription || chatItem.last_message;
         chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
         
-        if (data.isNewIncomingMessage) {
+        if (isIncoming) {
           if (!isCurrentChat) {
             chatItem.unread_count = (chatItem.unread_count || 0) + 1;
           } else {
