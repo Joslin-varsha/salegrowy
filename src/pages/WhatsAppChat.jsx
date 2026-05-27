@@ -152,8 +152,12 @@ export default function WhatsAppChat() {
         chatItem.last_message = data.contactDescription || chatItem.last_message;
         chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
         
-        if (data.isNewIncomingMessage && !isCurrentChat) {
-          chatItem.unread_count = (chatItem.unread_count || 0) + 1;
+        if (data.isNewIncomingMessage) {
+          if (!isCurrentChat) {
+            chatItem.unread_count = (chatItem.unread_count || 0) + 1;
+          } else {
+            chatItem.unread_count = 0;
+          }
         }
         
         // Move updated chat to the top of list
@@ -231,8 +235,11 @@ export default function WhatsAppChat() {
 
   const scrollToBottom = () => {
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+      if (chatBodyRef.current) {
+        chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+      }
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    }, 150);
   };
 
   // Fetch Chats API
@@ -693,6 +700,13 @@ export default function WhatsAppChat() {
                     onClick={() => {
                       setSelectedChat(chat);
                       fetchHistory(chat);
+                      // Clear unread count locally when chat is clicked/opened
+                      setChats(prev => prev.map(c => {
+                        if (c && c._id === chat._id) {
+                          return { ...c, unread_count: 0 };
+                        }
+                        return c;
+                      }));
                     }}
                     style={{
                       display: 'flex',
