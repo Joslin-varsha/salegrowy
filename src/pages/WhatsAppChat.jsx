@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Pusher from 'pusher-js';
 import { 
   Search, 
   Send, 
@@ -91,6 +92,93 @@ export default function WhatsAppChat() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
+
+  const selectedChatRef = useRef(selectedChat);
+  const searchQueryRef = useRef(searchQuery);
+
+  useEffect(() => {
+    selectedChatRef.current = selectedChat;
+  }, [selectedChat]);
+
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  // Real-time integration via Pusher
+  useEffect(() => {
+    const vendorUid = localStorage.getItem('vendor_uid');
+    if (!vendorUid) return;
+
+    const pusher = new Pusher('47cad4071c70ec772da2', {
+      cluster: 'ap2',
+      forceTLS: true
+    });
+
+    const channelName = `whatsappChat${vendorUid}`;
+    const channel = pusher.subscribe(channelName);
+
+    channel.bind('whatsappChat', (data) => {
+      console.log('Received Pusher Real-time WhatsApp Message:', data);
+      if (!data) return;
+
+      const isCurrentChat = selectedChatRef.current && (
+        selectedChatRef.current._uid === data.contactUid || 
+        selectedChatRef.current.uid === data.contactUid || 
+        String(selectedChatRef.current._id) === String(data.contactUid)
+      );
+
+      // 1. If it's a new incoming message and it's the active chat, fetch updated history
+      if (data.isNewIncomingMessage && isCurrentChat) {
+        fetchHistorySilent(selectedChatRef.current);
+      }
+
+      // 2. Update the sidebar chats list
+      setChats(prev => {
+        const index = prev.findIndex(c => c && (
+          c._uid === data.contactUid || 
+          c.uid === data.contactUid || 
+          String(c._id) === String(data.contactUid)
+        ));
+
+        if (index === -1) {
+          // If the chat is not in the sidebar, reload first page of chats
+          fetchChats(1, searchQueryRef.current);
+          return prev;
+        }
+
+        const updatedChats = [...prev];
+        const chatItem = { ...updatedChats[index] };
+        
+        chatItem.last_message = data.contactDescription || chatItem.last_message;
+        chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
+        
+        if (data.isNewIncomingMessage && !isCurrentChat) {
+          chatItem.unread_count = (chatItem.unread_count || 0) + 1;
+        }
+        
+        // Move updated chat to the top of list
+        updatedChats.splice(index, 1);
+        return [chatItem, ...updatedChats];
+      });
+
+      // 3. Update message status in the active conversation view
+      if (data.message_status && isCurrentChat) {
+        setMessages(prev => prev.map(m => {
+          const mId = m._id || m.logId || m.wamid || m.message_id;
+          if (mId && (mId === data.lastMessageUid || m._uid === data.lastMessageUid)) {
+            return { ...m, status: data.message_status };
+          }
+          return m;
+        }));
+      }
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusher.unsubscribe(channelName);
+      pusher.disconnect();
+    };
+  }, []);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -125,7 +213,7 @@ export default function WhatsAppChat() {
 
     const interval = setInterval(() => {
       fetchHistorySilent(selectedChat);
-    }, 5000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [selectedChat]);

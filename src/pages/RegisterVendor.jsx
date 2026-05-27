@@ -6,7 +6,8 @@ import { encryptData, decryptData } from "../utils/encryption";
 export default function RegisterVendor() {
   const location = useLocation();
   const navigate = useNavigate();
-  const shopifyTokenId = location.state?.shopifyTokenId;
+  const shopifyTokenId = location.state?.shopifyTokenId || localStorage.getItem('shopifyTokenId');
+  const localStorageShopLink = location.state?.localStorageShopLink || localStorage.getItem('localStorageShopLink') || "";
 
   const [formData, setFormData] = useState({
     company: '',
@@ -90,15 +91,16 @@ export default function RegisterVendor() {
           },
           body: JSON.stringify({
             data: encryptData({
-            companyName: formData.company,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            username: formData.username,
-            email: formData.email,
-            mobileNumber: formData.mobile,
-            password: formData.password,
-            confirmPassword: formData.confirmPassword,
-            shopifyTokenId: shopifyTokenId || "4"
+              companyName: formData.company,
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              username: formData.username,
+              email: formData.email,
+              mobileNumber: formData.mobile,
+              password: formData.password,
+              confirmPassword: formData.confirmPassword,
+              shopifyTokenId: shopifyTokenId || "4",
+              localStorageShopLink: localStorageShopLink
             })
           })
         });

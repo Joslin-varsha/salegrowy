@@ -52,12 +52,14 @@ const ShopifyAuth = () => {
 
     // PHASE 2: Callback from Shopify
     if (location.pathname === '/callback') {
+      localStorage.clear();
       const finalizeAuth = async () => {
         const code = params.get('code');
         const shopLink = params.get('shop');
         await new Promise(resolve => setTimeout(resolve, 5000));
         if (shopLink) {
           localStorage.setItem('shop_link', shopLink);
+          localStorage.setItem('localStorageShopLink', shopLink);
         }
 
         if (!code) {
@@ -80,20 +82,39 @@ const ShopifyAuth = () => {
           const result = await response.json();
           
           if (result.success) {
+            localStorage.setItem('shopify_auth_response', JSON.stringify(result));
+            if (result.shopifyTokenId) {
+              localStorage.setItem('shopifyTokenId', result.shopifyTokenId);
+            }
             if (result.type === 'register') {
               setStatusMessage('New Shopify store detected. Redirecting to registration...');
               setTimeout(() => {
-                navigate('/register', { state: { shopifyTokenId: result.shopifyTokenId } });
+                navigate('/register', { 
+                  state: { 
+                    shopifyTokenId: result.shopifyTokenId,
+                    localStorageShopLink: shopLink
+                  } 
+                });
               }, 1500);
             } else if (result.type === 'login') {
               setStatusMessage('Shopify store recognized. Redirecting to login...');
               setTimeout(() => {
-                navigate('/');
+                navigate('/', { 
+                  state: { 
+                    localStorageShopLink: shopLink
+                  } 
+                });
               }, 1500);
             } else {
               // Fallback for unexpected type
               setStatusMessage('Authentication successful. Redirecting...');
-              setTimeout(() => navigate('/'), 1500);
+              setTimeout(() => {
+                navigate('/', { 
+                  state: { 
+                    localStorageShopLink: shopLink
+                  } 
+                });
+              }, 1500);
             }
           } else {
             setStatusMessage(`Authentication failed: ${result.message || 'Unknown error'}`);

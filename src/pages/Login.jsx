@@ -1,11 +1,12 @@
 import { API_BASE_URL } from '../config';
 import { useState } from 'react';
 import { MessageCircle, User, Lock, LogIn } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { encryptData, decryptData } from "../utils/encryption";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     login: '',
@@ -60,6 +61,7 @@ export default function Login() {
       // Removed setApiMessage({ type: '', text: '' }); to prevent form "blinking" / layout shifting
 
       try {
+        const localStorageShopLink = location.state?.localStorageShopLink || localStorage.getItem('localStorageShopLink') || "";
         const response = await fetch( `${import.meta.env.VITE_API_URL}/api/vendor/login`, {
           method: 'POST',
           headers: {
@@ -68,7 +70,8 @@ export default function Login() {
           body: JSON.stringify({
             data: encryptData({
               loginField: formData.login,
-              password: formData.password
+              password: formData.password,
+              localStorageShopLink: localStorageShopLink
             })
           })
         });
