@@ -41,6 +41,8 @@ export default function SyncCustomers() {
           'Customer sync job successfully queued'
         );
       }
+      // Automatically refresh customer list
+      await fetchCustomers();
     } catch (error) {
       console.error('Sync customers error:', error);
       message.error('Failed to sync customers');
@@ -106,24 +108,15 @@ export default function SyncCustomers() {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
           Sync Customers
         </h1>
-        <div style={{ display: 'flex', gap: '0.75rem', marginRight: '100px' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginRight: '10px' }}>
           <button
             className="btn btn-primary"
             style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
             onClick={handleSyncCustomers}
-            disabled={loading}
+            disabled={loading || customersLoading}
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            {loading ? 'Syncing...' : 'Sync All Customers'}
-          </button>
-          <button
-            className="btn btn-secondary"
-            style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            onClick={fetchCustomers}
-            disabled={customersLoading}
-          >
-            <RefreshCw size={14} className={customersLoading ? "animate-spin" : ""} />
-            {customersLoading ? 'Fetching...' : 'Fetch Customers'}
+            <RefreshCw size={14} className={loading || customersLoading ? "animate-spin" : ""} />
+            {loading ? 'Syncing...' : customersLoading ? 'Fetching...' : 'Sync All Customers'}
           </button>
         </div>
       </div>

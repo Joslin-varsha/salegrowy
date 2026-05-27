@@ -45,6 +45,8 @@ export default function SyncProducts() {
           'Product sync job successfully queued'
         );
       }
+      // Automatically fetch updated products from Shopify
+      await fetchShopifyProducts(1, syncedPageSize, searchQuery);
     } catch (error) {
       console.error('Sync products error:', error);
       message.error('Failed to sync products');
@@ -97,25 +99,15 @@ export default function SyncProducts() {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
           Sync Products
         </h1>
-        <div style={{ display: 'flex', gap: '0.75rem', marginRight: '100px' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginRight: '10px' }}>
           <button
             className="btn btn-primary"
             style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
             onClick={handleSyncProducts}
-            disabled={loading}
+            disabled={loading || shopifyLoading}
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            {loading ? 'Syncing...' : 'Sync All Products'}
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            onClick={() => fetchShopifyProducts(1, syncedPageSize, searchQuery)}
-            disabled={shopifyLoading}
-          >
-            <RefreshCw size={14} className={shopifyLoading ? "animate-spin" : ""} />
-            {shopifyLoading ? 'Fetching...' : 'Fetch Shopify Products'}
+            <RefreshCw size={14} className={loading || shopifyLoading ? "animate-spin" : ""} />
+            {loading ? 'Syncing...' : shopifyLoading ? 'Fetching...' : 'Sync All Products'}
           </button>
         </div>
       </div>

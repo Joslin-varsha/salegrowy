@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook} from 'lucide-react';
+import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles} from 'lucide-react';
 import { SyncOutlined } from '@ant-design/icons';
 
 
@@ -47,6 +47,7 @@ const Sidebar = () => {
         { text: 'Flows', path: '/dashboard/bot/flows' }
       ]
     },
+    { icon: Sparkles, text: 'AI Agent', path: '/dashboard/agent' },
     { icon: User, text: 'Subscription Plans', path: '/dashboard/subscription' },
     { icon: SyncOutlined, text: 'Sync Products', path: '/dashboard/sync-products' },
     { icon: SyncOutlined, text: 'Sync Customers', path: '/dashboard/sync-customers' },
@@ -94,7 +95,7 @@ const Sidebar = () => {
           SaleGrowy
         </span>
       </div>
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1.5rem 0.5rem', width: '100%', overflow: 'hidden' }}>
+      <nav className="custom-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '1.5rem 0.5rem', width: '100%', overflowY: 'auto', flex: 1 }}>
         {sidebarItems.map((item, index) => {
           const isActive =
             (item.path !== '#' && location.pathname === item.path) ||
