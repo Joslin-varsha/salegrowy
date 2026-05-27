@@ -106,143 +106,96 @@ export default function WhatsAppChat() {
 
   // Real-time integration via Pusher
   useEffect(() => {
-    let pusherInstance = null;
-    let channelInstance = null;
-    let activeChannelName = "";
+    const vendorUid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
+    if (!vendorUid) return;
 
-    const initPusher = (uid) => {
-      pusherInstance = new Pusher('47cad4071c70ec772da2', {
-        cluster: 'ap2',
-        forceTLS: true
-      });
+    const pusher = new Pusher('47cad4071c70ec772da2', {
+      cluster: 'ap2',
+      forceTLS: true
+    });
 
-      activeChannelName = `whatsappChat${uid}`;
-      channelInstance = pusherInstance.subscribe(activeChannelName);
+    const channelName = `whatsappChat${vendorUid}`;
+    const channel = pusher.subscribe(channelName);
 
-      channelInstance.bind('whatsappChat', (data) => {
-        console.log('Received Pusher Real-time WhatsApp Message:', data);
-        if (!data) return;
+    channel.bind('whatsappChat', (data) => {
+      console.log('Received Pusher Real-time WhatsApp Message:', data);
+      if (!data) return;
 
-        const isCurrentChat = selectedChatRef.current && (
-          String(selectedChatRef.current._uid) === String(data.contactUid) || 
-          String(selectedChatRef.current.uid) === String(data.contactUid) || 
-          String(selectedChatRef.current._id) === String(data.contactUid) ||
-          String(selectedChatRef.current.id) === String(data.contactUid) ||
-          String(selectedChatRef.current.phone_number) === String(data.contactUid)
-        );
+      const isCurrentChat = selectedChatRef.current && (
+        String(selectedChatRef.current._uid) === String(data.contactUid) || 
+        String(selectedChatRef.current.uid) === String(data.contactUid) || 
+        String(selectedChatRef.current._id) === String(data.contactUid) ||
+        String(selectedChatRef.current.id) === String(data.contactUid) ||
+        String(selectedChatRef.current.phone_number) === String(data.contactUid)
+      );
 
-        // Robust check for incoming message event (handles boolean, number, string, or missing isNewIncomingMessage property)
-        const isIncoming = data.isNewIncomingMessage === true || 
-                           data.isNewIncomingMessage === 1 || 
-                           String(data.isNewIncomingMessage) === '1' || 
-                           String(data.isNewIncomingMessage) === 'true' ||
-                           (data.isNewIncomingMessage !== false && 
-                            data.isNewIncomingMessage !== 0 && 
-                            data.isNewIncomingMessage !== 'false' && 
-                            data.isNewIncomingMessage !== '0' && 
-                            !data.message_status);
+      // Robust check for incoming message event (handles boolean, number, string, or missing isNewIncomingMessage property)
+      const isIncoming = data.isNewIncomingMessage === true || 
+                         data.isNewIncomingMessage === 1 || 
+                         String(data.isNewIncomingMessage) === '1' || 
+                         String(data.isNewIncomingMessage) === 'true' ||
+                         (data.isNewIncomingMessage !== false && 
+                          data.isNewIncomingMessage !== 0 && 
+                          data.isNewIncomingMessage !== 'false' && 
+                          data.isNewIncomingMessage !== '0' && 
+                          !data.message_status);
 
-        // 1. If it's a new incoming message and it's the active chat, fetch updated history
-        if (isIncoming && isCurrentChat) {
-          fetchHistorySilent(selectedChatRef.current);
-        }
-
-        // 2. Update the sidebar chats list
-        setChats(prev => {
-          const index = prev.findIndex(c => c && (
-            String(c._uid) === String(data.contactUid) || 
-            String(c.uid) === String(data.contactUid) || 
-            String(c._id) === String(data.contactUid) ||
-            String(c.id) === String(data.contactUid) ||
-            String(c.phone_number) === String(data.contactUid)
-          ));
-
-          if (index === -1) {
-            // If the chat is not in the sidebar, reload first page of chats
-            fetchChats(1, searchQueryRef.current);
-            return prev;
-          }
-
-          const updatedChats = [...prev];
-          const chatItem = { ...updatedChats[index] };
-          
-          chatItem.last_message = data.contactDescription || chatItem.last_message;
-          chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
-          
-          if (isIncoming) {
-            if (!isCurrentChat) {
-              chatItem.unread_count = (chatItem.unread_count || 0) + 1;
-            } else {
-              chatItem.unread_count = 0;
-            }
-          }
-          
-          // Move updated chat to the top of list
-          updatedChats.splice(index, 1);
-          return [chatItem, ...updatedChats];
-        });
-
-        // 3. Update message status in the active conversation view
-        if (data.message_status && isCurrentChat) {
-          setMessages(prev => prev.map(m => {
-            const mId = m._id || m.logId || m.wamid || m.message_id;
-            if (mId && (mId === data.lastMessageUid || m._uid === data.lastMessageUid)) {
-              return { ...m, status: data.message_status };
-            }
-            return m;
-          }));
-        }
-      });
-    };
-
-    const setupPusher = async () => {
-      let uid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
-
-      // Fallback: If not in localStorage yet, fetch it directly from profile
-      if (!uid) {
-        try {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/profile`, {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-              const result = await res.json();
-              if (result.success && result.data?.user) {
-                const user = result.data.user;
-                uid = user.vendor_uid || user.uid || user._uid || user.vendorUid ||
-                      user.vendor_id || user.id || user._id || user.vendorId;
-                if (uid) {
-                  localStorage.setItem('vendor_uid', String(uid));
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.error("Error loading profile for Pusher setup fallback:", e);
-        }
+      // 1. If it's a new incoming message and it's the active chat, fetch updated history
+      if (isIncoming && isCurrentChat) {
+        fetchHistorySilent(selectedChatRef.current);
       }
 
-      if (uid) {
-        initPusher(uid);
-      } else {
-        console.warn("Could not retrieve vendorUid for Pusher initialization.");
-      }
-    };
+      // 2. Update the sidebar chats list
+      setChats(prev => {
+        const index = prev.findIndex(c => c && (
+          String(c._uid) === String(data.contactUid) || 
+          String(c.uid) === String(data.contactUid) || 
+          String(c._id) === String(data.contactUid) ||
+          String(c.id) === String(data.contactUid) ||
+          String(c.phone_number) === String(data.contactUid)
+        ));
 
-    setupPusher();
+        if (index === -1) {
+          // If the chat is not in the sidebar, reload first page of chats
+          fetchChats(1, searchQueryRef.current);
+          return prev;
+        }
+
+        const updatedChats = [...prev];
+        const chatItem = { ...updatedChats[index] };
+        
+        chatItem.last_message = data.messageText || chatItem.last_message;
+        chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
+        
+        if (isIncoming) {
+          if (!isCurrentChat) {
+            chatItem.unread_count = (chatItem.unread_count || 0) + 1;
+          } else {
+            chatItem.unread_count = 0;
+          }
+        }
+        
+        // Move updated chat to the top of list
+        updatedChats.splice(index, 1);
+        return [chatItem, ...updatedChats];
+      });
+
+      // 3. Update message status in the active conversation view
+      if (data.message_status && isCurrentChat) {
+        setMessages(prev => prev.map(m => {
+          const mId = m._id || m.logId || m.wamid || m.message_id;
+          if (mId && (mId === data.lastMessageUid || m._uid === data.lastMessageUid)) {
+            return { ...m, status: data.message_status };
+          }
+          return m;
+        }));
+      }
+    });
 
     return () => {
-      if (channelInstance) {
-        channelInstance.unbind_all();
-      }
-      if (pusherInstance) {
-        if (activeChannelName) {
-          pusherInstance.unsubscribe(activeChannelName);
-        }
-        pusherInstance.disconnect();
-      }
+      channel.unbind_all();
+      pusher.unsubscribe(channelName);
+      pusher.disconnect();
     };
   }, []);
   const [loadingHistory, setLoadingHistory] = useState(false);

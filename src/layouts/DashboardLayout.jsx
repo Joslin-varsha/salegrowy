@@ -221,16 +221,8 @@ const Topbar = ({ isLargeScreen }) => {
           });
         if (res.ok) {
           const result = await res.json();
-          if (result.success && result.data?.user) {
-            setVendorUserData(result.data.user);
-            const user = result.data.user;
-            const vId = user.vendor_id || user.id || user._id || user.vendorId;
-            const vUid = user.vendor_uid || user.uid || user._uid || user.vendorUid;
-            if (vId) localStorage.setItem('vendor_id', String(vId));
-            if (vUid) localStorage.setItem('vendor_uid', String(vUid));
-          } else {
-            setVendorUserData({});
-          }
+          if (result.success && result.data?.user) setVendorUserData(result.data.user);
+          else setVendorUserData({});
         } else {
           setVendorUserData({});
         }
