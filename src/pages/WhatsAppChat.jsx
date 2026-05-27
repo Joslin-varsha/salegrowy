@@ -109,6 +109,47 @@ export default function WhatsAppChat() {
     const vendorUid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
     if (!vendorUid) return;
 
+    const fetchChatsSilent = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/list`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            data: encryptData({
+              page: '1',
+              limit: '15',
+              search: searchQueryRef.current || ''
+            })
+          })
+        });
+
+        const encryptedResponse = await response.json();
+        let data = encryptedResponse;
+        if (encryptedResponse && encryptedResponse.payload) {
+          data = decryptData(encryptedResponse.payload);
+        }
+
+        if (response.ok && data && data.success) {
+          const chatsList = data.data?.chats || [];
+          setChats(prev => {
+            const newChats = chatsList.filter(c => c);
+            const existingIds = new Set(newChats.map(c => c._id));
+            const remainingOldChats = prev.filter(c => c && !existingIds.has(c._id));
+            
+            return [...newChats, ...remainingOldChats].sort((a, b) => 
+              new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0)
+            );
+          });
+        }
+      } catch (err) {
+        console.error('Error in silent chat fetch:', err);
+      }
+    };
+
     const pusher = new Pusher('47cad4071c70ec772da2', {
       cluster: 'ap2',
       forceTLS: true
@@ -117,86 +158,83 @@ export default function WhatsAppChat() {
     const channelName = `whatsappChat${vendorUid}`;
     const channel = pusher.subscribe(channelName);
 
-channel.bind('whatsappChat', (data) => {
-  console.log("PUSHER EVENT RECEIVED", data);
+    channel.bind('whatsappChat', (data) => {
+      console.log("PUSHER EVENT RECEIVED", data);
 
-  if (!data) return;
+      if (!data) return;
 
-setChats(prev => {
+      let shouldFetchChats = false;
 
-  const updatedChats = prev.map(chat => {
+      setChats(prev => {
+        let isFound = false;
 
-    if (!chat) return chat;
+        const updatedChats = prev.map(chat => {
+          if (!chat) return chat;
 
-    const matched =
-      String(chat._uid || '') === String(data.contactUid || '');
+          const matched =
+            String(chat._uid || '') === String(data.contactUid || '');
 
-    if (!matched) return chat;
+          if (!matched) return chat;
 
-    const isCurrentChat =
-      selectedChatRef.current &&
-      String(selectedChatRef.current._uid || '') === String(data.contactUid || '');
+          isFound = true;
+          const isCurrentChat =
+            selectedChatRef.current &&
+            String(selectedChatRef.current._uid || '') === String(data.contactUid || '');
 
-    return {
-      ...chat,
-
-      unread_count:
-        isCurrentChat
-          ? 0
-          : data.isNewIncomingMessage
-            ? Number(chat.unread_count || 0) + 1
-            : Number(chat.unread_count || 0),
-
-      // DON'T overwrite message if backend doesn't send it
-      last_message_time:
-        data.formatted_last_message_time ||
-        new Date().toISOString()
-    };
-  });
-
-  return [...updatedChats].sort((a, b) =>
-    new Date(b.last_message_time || 0) -
-    new Date(a.last_message_time || 0)
-  );
-});
-
-if (selectedChatRef.current) {
-  fetchHistorySilent(selectedChatRef.current);
-}
-
-  const isCurrentChat =
-    selectedChatRef.current &&
-    (
-      String(selectedChatRef.current._uid) === String(data.contactUid) ||
-      String(selectedChatRef.current._id) === String(data.contactId)
-    );
-
-  // Refresh currently opened chat only
-  if (isCurrentChat) {
-    fetchHistorySilent(selectedChatRef.current);
-  }
-
-  // Message status update
-  if (data.message_status && data.lastMessageUid) {
-
-    setMessages(prev =>
-      prev.map(m => {
-
-        const msgUid =
-          String(m._uid || m.wamid || m.logId);
-
-        if (msgUid === String(data.lastMessageUid)) {
           return {
-            ...m,
-            status: data.message_status
+            ...chat,
+            unread_count:
+              isCurrentChat
+                ? 0
+                : data.isNewIncomingMessage
+                  ? Number(chat.unread_count || 0) + 1
+                  : Number(chat.unread_count || 0),
+            last_message_time:
+              data.formatted_last_message_time ||
+              chat.last_message_time ||
+              new Date().toISOString()
           };
+        });
+
+        if (!isFound && data.contactUid) {
+          shouldFetchChats = true;
         }
 
-        return m;
-      })
-    );
-  }
-});
+        return [...updatedChats].sort((a, b) =>
+          new Date(b.last_message_time || 0) -
+          new Date(a.last_message_time || 0)
+        );
+      });
+
+      if (shouldFetchChats) {
+        fetchChatsSilent();
+      }
+
+      const isCurrentChat =
+        selectedChatRef.current &&
+        String(selectedChatRef.current._uid) === String(data.contactUid);
+
+      // Refresh currently opened chat only
+      if (isCurrentChat) {
+        fetchHistorySilent(selectedChatRef.current);
+      }
+
+      // Message status update
+      if (data.message_status && data.lastMessageUid) {
+        setMessages(prev =>
+          prev.map(m => {
+            const msgUid = String(m._uid || m.wamid || m.logId);
+            if (msgUid === String(data.lastMessageUid)) {
+              return {
+                ...m,
+                status: data.message_status
+              };
+            }
+            return m;
+          })
+        );
+      }
+    });
 
     return () => {
       channel.unbind_all();
