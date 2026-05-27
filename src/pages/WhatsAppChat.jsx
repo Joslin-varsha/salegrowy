@@ -118,78 +118,38 @@ export default function WhatsAppChat() {
     const channel = pusher.subscribe(channelName);
 
     channel.bind('whatsappChat', (data) => {
-      console.log('Received Pusher Real-time WhatsApp Message:', data);
-      if (!data) return;
+  console.log('Received Pusher Real-time WhatsApp Message:', data);
 
-      const isCurrentChat = selectedChatRef.current && (
-        String(selectedChatRef.current._uid) === String(data.contactUid) || 
-        String(selectedChatRef.current.uid) === String(data.contactUid) || 
-        String(selectedChatRef.current._id) === String(data.contactUid) ||
-        String(selectedChatRef.current.id) === String(data.contactUid) ||
-        String(selectedChatRef.current.phone_number) === String(data.contactUid)
-      );
+  if (!data) return;
 
-      // Robust check for incoming message event (handles boolean, number, string, or missing isNewIncomingMessage property)
-      const isIncoming = data.isNewIncomingMessage === true || 
-                         data.isNewIncomingMessage === 1 || 
-                         String(data.isNewIncomingMessage) === '1' || 
-                         String(data.isNewIncomingMessage) === 'true' ||
-                         (data.isNewIncomingMessage !== false && 
-                          data.isNewIncomingMessage !== 0 && 
-                          data.isNewIncomingMessage !== 'false' && 
-                          data.isNewIncomingMessage !== '0' && 
-                          !data.message_status);
+  const isCurrentChat = selectedChatRef.current && (
+    String(selectedChatRef.current._uid) === String(data.contactUid)
+  );
 
-      // 1. If it's a new incoming message and it's the active chat, fetch updated history
-      if (isCurrentChat) {
-        fetchHistorySilent(selectedChatRef.current);
+  // Active chat refresh
+  if (isCurrentChat) {
+    fetchHistorySilent(selectedChatRef.current);
+  }
+
+  // Refresh sidebar instantly
+  fetchChats(1, searchQueryRef.current);
+
+  // Update message status
+  if (data.message_status && isCurrentChat) {
+    setMessages(prev => prev.map(m => {
+      const mId = m._id || m.logId || m.wamid || m.message_id;
+
+      if (mId && (
+        mId === data.lastMessageUid ||
+        m._uid === data.lastMessageUid
+      )) {
+        return { ...m, status: data.message_status };
       }
 
-      // 2. Update the sidebar chats list
-      setChats(prev => {
-        const index = prev.findIndex(c => c && (
-          String(c._uid) === String(data.contactUid) || 
-          String(c.uid) === String(data.contactUid) || 
-          String(c._id) === String(data.contactUid) ||
-          String(c.id) === String(data.contactUid) ||
-          String(c.phone_number) === String(data.contactUid)
-        ));
-
-        if (index === -1) {
-          // If the chat is not in the sidebar, reload first page of chats
-          fetchChats(1, searchQueryRef.current);
-          return prev;
-        }
-
-        const updatedChats = [...prev];
-        const chatItem = { ...updatedChats[index] };
-        
-        chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
-        
-        if (isIncoming) {
-          if (!isCurrentChat) {
-            chatItem.unread_count = (chatItem.unread_count || 0) + 1;
-          } else {
-            chatItem.unread_count = 0;
-          }
-        }
-        
-        // Move updated chat to the top of list
-        updatedChats.splice(index, 1);
-        return [chatItem, ...updatedChats];
-      });
-
-      // 3. Update message status in the active conversation view
-      if (data.message_status && isCurrentChat) {
-        setMessages(prev => prev.map(m => {
-          const mId = m._id || m.logId || m.wamid || m.message_id;
-          if (mId && (mId === data.lastMessageUid || m._uid === data.lastMessageUid)) {
-            return { ...m, status: data.message_status };
-          }
-          return m;
-        }));
-      }
-    });
+      return m;
+    }));
+  }
+});
 
     return () => {
       channel.unbind_all();
@@ -230,8 +190,8 @@ export default function WhatsAppChat() {
     scrollToBottom();
 
     const interval = setInterval(() => {
-      fetchHistorySilent(selectedChat);
-    }, 15000);
+  fetchHistorySilent(selectedChat);
+}, 15000);
 
     return () => clearInterval(interval);
   }, [selectedChat]);
@@ -487,7 +447,16 @@ export default function WhatsAppChat() {
     scrollToBottom();
   }, 100);
 
-  return [...prev, ...newMessages];
+  const existingIds = new Set(
+  prev.map(m => m._id || m.logId || m.wamid)
+);
+
+const filteredNewMessages = newMessages.filter(m => {
+  const id = m._id || m.logId || m.wamid;
+  return !existingIds.has(id);
+});
+
+return [...prev, ...filteredNewMessages];
 }
             }
             return prev;
