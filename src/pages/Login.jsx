@@ -71,7 +71,8 @@ export default function Login() {
             data: encryptData({
               loginField: formData.login,
               password: formData.password,
-              localStorageShopLink: localStorageShopLink
+              localStorageShopLink: location.state?.localStorageShopLink ? localStorageShopLink : "",
+              status: location.state?.localStorageShopLink ? 1 : 0
             })
           })
         });

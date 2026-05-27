@@ -100,7 +100,8 @@ export default function RegisterVendor() {
               password: formData.password,
               confirmPassword: formData.confirmPassword,
               shopifyTokenId: shopifyTokenId || "4",
-              localStorageShopLink: localStorageShopLink
+              localStorageShopLink: location.state?.localStorageShopLink ? localStorageShopLink : "",
+              status: location.state?.localStorageShopLink ? 1 : 0
             })
           })
         });
