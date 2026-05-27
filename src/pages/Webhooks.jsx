@@ -81,20 +81,22 @@ export default function Webhooks() {
                   backgroundColor: '#ffffff', 
                   borderRadius: '8px', 
                   border: '1px solid #e2e8f0', 
-                  padding: '0.75rem 1rem', 
+                  padding: '0.25rem 1rem', 
                   marginTop: '0.75rem',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+                  width: 'fit-content',
+                  minWidth: '260px'
                 }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#475569', fontSize: '0.8rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', color: '#475569', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0', borderBottom: '1px solid #f1f5f9' }}>
                       <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
                       <span>Customer Creation & Update</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0', borderBottom: '1px solid #f1f5f9' }}>
                       <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
                       <span>Cart Creation & Update</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 0' }}>
                       <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
                       <span>Order Creation & Update</span>
                     </div>
