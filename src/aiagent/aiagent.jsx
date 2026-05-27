@@ -146,8 +146,14 @@ const AIAgent = () => {
   const [clientSecret, setClientSecret] = useState('');
   const [isSavingDetails, setIsSavingDetails] = useState(false);
 
-  const [vendorData, setVendorData] = useState(null);
-  const [vendorId, setVendorId] = useState(null);
+  const [vendorData, setVendorData] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('vendor_data'));
+    } catch {
+      return null;
+    }
+  });
+  const [vendorId, setVendorId] = useState(() => localStorage.getItem('vendor_id'));
 
   const fetchShopifyAccessToken = async (code) => {
     try {
@@ -251,6 +257,8 @@ const AIAgent = () => {
             vendor.is_admin
           );
 
+          setVendorId(vendor.vendor_id);
+          setVendorData(vendor);
         }
 
       }
@@ -433,15 +441,15 @@ const AIAgent = () => {
       // case 'persona':
       //   return <AIPersonaContent />;
       case 'knowledge':
-        return <KnowledgeBaseContent setShowRedirectDialog={setShowRedirectDialog} />;
+        return <KnowledgeBaseContent setShowRedirectDialog={setShowRedirectDialog} vendorId={vendorId} />;
       case 'actions':
-        return <ActionsContent />;
+        return <ActionsContent vendorId={vendorId} />;
               case 'sync_products':
           return <SyncProductsContent />;
         case 'widget':
         return <WidgetHome embedded={true} />;
       case 'stop_contacts':
-        return <AiStopContactsContent />;
+        return <AiStopContactsContent vendorId={vendorId} />;
       default:
         return <div style={{ padding: 40, textAlign: 'center' }}>Coming Soon: {activeSidebar}</div>;
     }
@@ -910,7 +918,7 @@ const AIPersonaContent = () => {
   );
 };
 
-const KnowledgeBaseContent = ({ setShowRedirectDialog }) => {
+const KnowledgeBaseContent = ({ setShowRedirectDialog, vendorId }) => {
   const [selectedSource, setSelectedSource] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [sourceEnabled, setSourceEnabled] = useState({
@@ -2111,7 +2119,7 @@ const KnowledgeBaseContent = ({ setShowRedirectDialog }) => {
   );
 };
 
-const ActionsContent = () => {
+const ActionsContent = ({ vendorId }) => {
   const [aiEnabled, setAiEnabled] = useState(true);
   const [startTime, setStartTime] = useState(dayjs('09:00', 'HH:mm'));
   const [endTime, setEndTime] = useState(dayjs('18:00', 'HH:mm'));
@@ -2296,7 +2304,7 @@ const ActionsContent = () => {
   );
 };
 
-const AiStopContactsContent = () => {
+const AiStopContactsContent = ({ vendorId }) => {
     const [loading, setLoading] = useState(false);
     const [stoppedContacts, setStoppedContacts] = useState([]);
 
