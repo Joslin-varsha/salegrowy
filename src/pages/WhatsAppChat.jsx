@@ -230,6 +230,21 @@ export default function WhatsAppChat() {
 
         if (!isFound && data.contactUid) {
           shouldFetchChats = true;
+          // Forcefully inject the brand new chat so it appears in the sidebar instantly!
+          // This ensures that even if you message from a brand new mobile number,
+          // the chat will pop up instantly. It will be replaced by the fully-populated
+          // database chat a few seconds later when the silent fetch catches up.
+          updatedChats.push({
+            _uid: data.contactUid,
+            _id: data.contactUid, 
+            contact_uid: data.contactUid,
+            first_name: data.contactDescription || 'New Contact',
+            last_name: '',
+            phone_number: data.contactDescription || '',
+            unread_count: 1,
+            last_message_time: new Date().toISOString(),
+            last_message: 'New message...'
+          });
         }
 
         return [...updatedChats].sort((a, b) =>
