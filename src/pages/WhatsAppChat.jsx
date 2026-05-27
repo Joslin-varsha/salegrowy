@@ -170,9 +170,9 @@ export default function WhatsAppChat() {
 
       if (!data) return;
 
-      // If it's a new message, we MUST fetch chats to get the actual message snippet text,
-      // because the backend Pusher payload does not contain the text.
-      let shouldFetchChats = data.isNewIncomingMessage ? true : false;
+      // Always fetch chats silently to guarantee the sidebar snippet and unread counts 
+      // are perfectly in sync with the backend, especially since the payload lacks the message text.
+      let shouldFetchChats = true;
 
       setChats(prev => {
         let isFound = false;
@@ -216,7 +216,11 @@ export default function WhatsAppChat() {
       });
 
       if (shouldFetchChats) {
-        fetchChatsSilent();
+        // Use a 1000ms delay to prevent race conditions where the backend database
+        // hasn't fully committed the new message before we fetch it.
+        setTimeout(() => {
+          fetchChatsSilent();
+        }, 1000);
       }
 
       const isCurrentChat =
@@ -225,7 +229,9 @@ export default function WhatsAppChat() {
 
       // Refresh currently opened chat only
       if (isCurrentChat) {
-        fetchHistorySilent(selectedChatRef.current);
+        setTimeout(() => {
+          fetchHistorySilent(selectedChatRef.current);
+        }, 1000);
       }
 
       // Message status update
