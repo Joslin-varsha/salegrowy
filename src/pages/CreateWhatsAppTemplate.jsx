@@ -29,6 +29,7 @@ import {
 export default function CreateWhatsAppTemplate() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const bodyTextRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showAllButtons, setShowAllButtons] = useState(false);
 
@@ -76,6 +77,36 @@ export default function CreateWhatsAppTemplate() {
   const addBodyVariable = () => {
     const varCount = (formData.bodyText.match(/\{\{\d+\}\}/g) || []).length + 1;
     setFormData(prev => ({ ...prev, bodyText: prev.bodyText + ` {{${varCount}}}` }));
+  };
+
+  const applyFormatting = (marker) => {
+    const textarea = bodyTextRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = formData.bodyText;
+    const selectedText = text.substring(start, end);
+
+    let formatted = '';
+    if (marker === 'bold') formatted = `*${selectedText}*`;
+    else if (marker === 'italic') formatted = `_${selectedText}_`;
+    else if (marker === 'strikethrough') formatted = `~${selectedText}~`;
+    else if (marker === 'code') formatted = `\`\`\`${selectedText}\`\`\``;
+
+    const newText = text.substring(0, start) + formatted + text.substring(end);
+    setFormData(prev => ({ ...prev, bodyText: newText }));
+
+    // Refocus the textarea and position cursor
+    setTimeout(() => {
+      textarea.focus();
+      const offset = marker === 'code' ? 3 : 1;
+      if (start === end) {
+        textarea.setSelectionRange(start + offset, start + offset);
+      } else {
+        textarea.setSelectionRange(start + formatted.length, start + formatted.length);
+      }
+    }, 0);
   };
 
   const addButton = (type) => {
@@ -240,12 +271,12 @@ export default function CreateWhatsAppTemplate() {
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem' }}>Enter the text for your message in the language you've selected.</p>
             <label className="form-label-gray">Body Text</label>
             <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-              <textarea name="bodyText" rows="6" className="form-input-white" style={{ border: 'none', padding: '1rem', width: '100%', resize: 'none' }} value={formData.bodyText} onChange={handleChange}></textarea>
+              <textarea ref={bodyTextRef} name="bodyText" rows="6" className="form-input-white" style={{ border: 'none', padding: '1rem', width: '100%', resize: 'none' }} value={formData.bodyText} onChange={handleChange}></textarea>
               <div style={{ backgroundColor: '#f8fafc', padding: '0.5rem 1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="formatting-btn"><Bold size={16} /></button>
-                <button type="button" className="formatting-btn"><Italic size={16} /></button>
-                <button type="button" className="formatting-btn"><Strikethrough size={16} /></button>
-                <button type="button" className="formatting-btn"><Code size={16} /></button>
+                <button type="button" onClick={() => applyFormatting('bold')} className="formatting-btn"><Bold size={16} /></button>
+                <button type="button" onClick={() => applyFormatting('italic')} className="formatting-btn"><Italic size={16} /></button>
+                <button type="button" onClick={() => applyFormatting('strikethrough')} className="formatting-btn"><Strikethrough size={16} /></button>
+                <button type="button" onClick={() => applyFormatting('code')} className="formatting-btn"><Code size={16} /></button>
                 <button type="button" onClick={addBodyVariable} className="btn-add-var">+ Add Variables</button>
               </div>
             </div>
@@ -371,7 +402,8 @@ export default function CreateWhatsAppTemplate() {
         .form-input-white { width: 100%; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; border-radius: 4px; background: white; font-size: 0.95rem; outline: none; }
         .section-container { position: relative; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2.25rem 1.5rem 1.5rem; margin-top: 1rem; }
         .section-badge { position: absolute; top: -14px; left: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 0.25rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #475569; }
-        .formatting-btn { background: #475569; color: white; border: none; border-radius: 4px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .formatting-btn { background: #475569; color: white; border: none; border-radius: 4px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; }
+        .formatting-btn:hover { background: #334155; }
         .btn-add-var { background: #0f172a; color: white; border: none; padding: 0.4rem 1rem; border-radius: 4px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
         .btn-add-var-small { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #475569; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
         .btn-toolbar-navy { background: #0f172a; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
