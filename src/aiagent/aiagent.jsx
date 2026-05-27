@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { decryptData } from '../utils/encryption';
 
 import { Layout, Menu, Input, Select, Button, Tabs, Card, Space, Tag, Typography, Breadcrumb, message, Switch, TimePicker, Modal, Progress } from 'antd';
-// import WidgetHome from '../widget/widgethome';
+import WidgetHome from '../widget/widgethome';
 import { 
   UserOutlined, 
   DatabaseOutlined, 
