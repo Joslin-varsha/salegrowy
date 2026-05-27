@@ -117,83 +117,85 @@ export default function WhatsAppChat() {
     const channelName = `whatsappChat${vendorUid}`;
     const channel = pusher.subscribe(channelName);
 
-    channel.bind('whatsappChat', (data) => {
+channel.bind('whatsappChat', (data) => {
   console.log("PUSHER EVENT RECEIVED", data);
 
   if (!data) return;
 
-  // UPDATE SIDEBAR INSTANTLY
-  setChats(prev => {
-    const updatedChats = prev.map(chat => {
-      if (!chat) return chat;
+setChats(prev => {
 
-      if (
-  String(chat._uid) === String(data.contactUid) ||
-  String(chat._id) === String(data.contactUid)
-){
+  const updatedChats = prev.map(chat => {
 
-        const isCurrentChat =
-          selectedChatRef.current &&
-          String(selectedChatRef.current._uid) === String(data.contactUid);
+    if (!chat) return chat;
 
-        return {
-  ...chat,
+    const matched =
+      String(chat._uid || '') === String(data.contactUid || '');
 
-  unread_count: isCurrentChat
-    ? 0
-    : data.isNewIncomingMessage
-      ? Number(chat.unread_count || 0) + 1
-      : Number(chat.unread_count || 0),
+    if (!matched) return chat;
 
-  last_message_time:
-  data.formatted_last_message_time ||
-  new Date().toISOString(),
+    const isCurrentChat =
+      selectedChatRef.current &&
+      String(selectedChatRef.current._uid || '') === String(data.contactUid || '');
 
-  last_message:
-  selectedChatRef.current &&
-  String(selectedChatRef.current._uid) === String(data.contactUid)
-    ? messages[messages.length - 1]?.message || chat.last_message
-    : chat.last_message
-};
-      }
+    return {
+      ...chat,
 
-      return chat;
-    });
+      unread_count:
+        isCurrentChat
+          ? 0
+          : data.isNewIncomingMessage
+            ? Number(chat.unread_count || 0) + 1
+            : Number(chat.unread_count || 0),
 
-    updatedChats.sort((a, b) => {
-      return new Date(b.last_message_time || 0)
-        - new Date(a.last_message_time || 0);
-    });
-
-    return [...updatedChats];
+      // DON'T overwrite message if backend doesn't send it
+      last_message_time:
+        data.formatted_last_message_time ||
+        new Date().toISOString()
+    };
   });
 
-  const isCurrentChat =
-  selectedChatRef.current &&
-  String(selectedChatRef.current._uid) === String(data.contactUid);
+  return [...updatedChats].sort((a, b) =>
+    new Date(b.last_message_time || 0) -
+    new Date(a.last_message_time || 0)
+  );
+});
 
-  // Refresh current opened chat only
+if (selectedChatRef.current) {
+  fetchHistorySilent(selectedChatRef.current);
+}
+
+  const isCurrentChat =
+    selectedChatRef.current &&
+    (
+      String(selectedChatRef.current._uid) === String(data.contactUid) ||
+      String(selectedChatRef.current._id) === String(data.contactId)
+    );
+
+  // Refresh currently opened chat only
   if (isCurrentChat) {
     fetchHistorySilent(selectedChatRef.current);
   }
 
   // Message status update
   if (data.message_status && data.lastMessageUid) {
-  setMessages(prev =>
-    prev.map(m => {
-      const msgUid = String(m._uid || m.wamid || m.logId);
 
-      if (msgUid === String(data.lastMessageUid)) {
-        return {
-          ...m,
-          status: data.message_status
-        };
-      }
+    setMessages(prev =>
+      prev.map(m => {
 
-      return m;
-    })
-  );
-}
+        const msgUid =
+          String(m._uid || m.wamid || m.logId);
+
+        if (msgUid === String(data.lastMessageUid)) {
+          return {
+            ...m,
+            status: data.message_status
+          };
+        }
+
+        return m;
+      })
+    );
+  }
 });
 
     return () => {
