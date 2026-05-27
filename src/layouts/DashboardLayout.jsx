@@ -224,11 +224,9 @@ const Topbar = ({ isLargeScreen }) => {
           if (result.success && result.data?.user) {
             setVendorUserData(result.data.user);
             const vId = result.data.user._id || result.data.user.id;
-            const vIntId = result.data.user.id || result.data.user._id;
             if (vId) {
               localStorage.setItem('vendor_id', vId);
               localStorage.setItem('vendor_uid', vId);
-              localStorage.setItem('vendor_int_id', String(vIntId));
             }
           }
           else setVendorUserData({});

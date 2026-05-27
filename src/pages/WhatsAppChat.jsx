@@ -104,33 +104,10 @@ export default function WhatsAppChat() {
     searchQueryRef.current = searchQuery;
   }, [searchQuery]);
 
-  // Make vendorUid a state variable to handle async storage
-  const [vendorUid, setVendorUid] = useState(() => localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id'));
-  const [vendorIntId, setVendorIntId] = useState(() => localStorage.getItem('vendor_int_id'));
-
-  // If vendorUid is not present, poll localStorage (in case DashboardLayout is still fetching profile)
-  useEffect(() => {
-    if (!vendorUid || !vendorIntId) {
-      const interval = setInterval(() => {
-        const uid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
-        const intId = localStorage.getItem('vendor_int_id');
-        if (uid) setVendorUid(uid);
-        if (intId) setVendorIntId(intId);
-        
-        if (uid && intId) {
-          clearInterval(interval);
-        }
-      }, 500);
-      return () => clearInterval(interval);
-    }
-  }, [vendorUid, vendorIntId]);
-
   // Real-time integration via Pusher
   useEffect(() => {
+    const vendorUid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
     if (!vendorUid) return;
-
-    // Enable logging so we can see real-time connections and events in the browser console
-    Pusher.logToConsole = true;
 
     const pusher = new Pusher('47cad4071c70ec772da2', {
       cluster: 'ap2',
@@ -139,15 +116,8 @@ export default function WhatsAppChat() {
 
     const channelName = `whatsappChat${vendorUid}`;
     const channel = pusher.subscribe(channelName);
-    
-    // Fallback channel in case the backend $vendorUid is empty/missing
-    const fallbackChannel = pusher.subscribe('whatsappChat');
-    
-    // Fallback channel for integer ID
-    const intChannelName = `whatsappChat${vendorIntId || ''}`;
-    const intChannel = pusher.subscribe(intChannelName);
 
-    const handlePusherEvent = (data) => {
+    channel.bind('whatsappChat', (data) => {
       console.log('Received Pusher Real-time WhatsApp Message:', data);
       if (!data) return;
 
@@ -171,7 +141,7 @@ export default function WhatsAppChat() {
                           !data.message_status);
 
       // 1. If it's a new incoming message and it's the active chat, fetch updated history
-      if (isIncoming && isCurrentChat) {
+      if (isCurrentChat) {
         fetchHistorySilent(selectedChatRef.current);
       }
 
@@ -194,7 +164,6 @@ export default function WhatsAppChat() {
         const updatedChats = [...prev];
         const chatItem = { ...updatedChats[index] };
         
-        chatItem.last_message = data.contactDescription || data.messageText || chatItem.last_message;
         chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
         
         if (isIncoming) {
@@ -220,22 +189,14 @@ export default function WhatsAppChat() {
           return m;
         }));
       }
-    };
-
-    channel.bind('whatsappChat', handlePusherEvent);
-    fallbackChannel.bind('whatsappChat', handlePusherEvent);
-    intChannel.bind('whatsappChat', handlePusherEvent);
+    });
 
     return () => {
       channel.unbind_all();
-      fallbackChannel.unbind_all();
-      intChannel.unbind_all();
       pusher.unsubscribe(channelName);
-      pusher.unsubscribe('whatsappChat');
-      pusher.unsubscribe(intChannelName);
       pusher.disconnect();
     };
-  }, [vendorUid, vendorIntId]);
+  }, []);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -467,6 +428,29 @@ export default function WhatsAppChat() {
 
       if (response.ok && data && data.success) {
         const historyList = data.data?.messages || data.data?.chats || data.data || [];
+
+        if (historyList.length > 0) {
+  const latestMessage = historyList[historyList.length - 1];
+
+  setChats(prev =>
+    prev.map(c => {
+      if (c && c._id === chatItem._id) {
+        return {
+          ...c,
+          last_message:
+            latestMessage.message ||
+            latestMessage.text ||
+            c.last_message,
+          last_message_time:
+            latestMessage.created_at ||
+            c.last_message_time
+        };
+      }
+      return c;
+    })
+  );
+}
+
         if (historyList.length > 0) {
           const latestPolledMsg = historyList[historyList.length - 1];
           
@@ -499,9 +483,12 @@ export default function WhatsAppChat() {
               }
               
               if (newMessages.length > 0) {
-                scrollToBottom();
-                return [...prev, ...newMessages];
-              }
+  setTimeout(() => {
+    scrollToBottom();
+  }, 100);
+
+  return [...prev, ...newMessages];
+}
             }
             return prev;
           });
@@ -562,6 +549,10 @@ export default function WhatsAppChat() {
         // Append sent message to local view immediately
         setMessages(prev => [...prev, newMsg]);
         scrollToBottom();
+
+        setTimeout(() => {
+  fetchHistorySilent(selectedChat);
+}, 1000);
 
         // Update the chats list last message snippet
         setChats(prev => prev.map(c => {
