@@ -118,7 +118,7 @@ export default function WhatsAppChat() {
     const channel = pusher.subscribe(channelName);
 
     channel.bind('whatsappChat', (data) => {
-  console.log('Received Pusher Real-time WhatsApp Message:', data);
+      console.log("PUSHER EVENT RECEIVED", data);
 
   if (!data) return;
 
