@@ -92,6 +92,12 @@ export default function Login() {
           if (data?.data?.token) {
 
             localStorage.setItem("token", data.data.token);
+            
+            const vendorId = data.data?.vendorId || data.data?._id || data.data?.id || (data.data?.user && (data.data.user._id || data.data.user.id));
+            if (vendorId) {
+              localStorage.setItem('vendor_id', vendorId);
+              localStorage.setItem('vendor_uid', vendorId);
+            }
 
             navigate('/dashboard');
 
