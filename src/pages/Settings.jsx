@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Facebook, ExternalLink, Check, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { decryptData } from '../utils/encryption';
 
@@ -12,6 +13,7 @@ const getWAStorageKey = () => {
 };
 
 export default function Settings() {
+  const navigate = useNavigate();
   // Load saved connection from localStorage immediately (so connected screen shows on refresh)
   const savedWA = (() => {
     try { return JSON.parse(localStorage.getItem(getWAStorageKey())); } catch { return null; }
@@ -21,6 +23,9 @@ export default function Settings() {
   const [setupDetails, setSetupDetails] = useState(savedWA || null);
   const [isSetupInProcess, setIsSetupInProcess] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isRefreshingHealth, setIsRefreshingHealth] = useState(false);
+  const [liveHealth, setLiveHealth] = useState(null);
   const phoneNumberIdRef = useRef('');
   const waBaIdRef = useRef('');
 
@@ -101,6 +106,92 @@ export default function Settings() {
     // If still not completed after all attempts, do one final fetch to show whatever state we have
     await fetchSetupDetails();
     setIsPolling(false);
+  };
+
+  const handleResyncPhoneNumbers = async () => {
+    setIsSyncing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sync-phone-numbers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const updatedDetails = {
+            ...setupDetails,
+            raw_settings: {
+              ...setupDetails?.raw_settings,
+              whatsapp_phone_numbers: JSON.stringify(result.data)
+            }
+          };
+          setSetupDetails(updatedDetails);
+          localStorage.setItem(getWAStorageKey(), JSON.stringify(updatedDetails));
+          alert(`Synced ${result.data.length} phone number(s) successfully!`);
+        }
+      }
+    } catch (err) {
+      console.error('[Settings] Error syncing phone numbers', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!window.confirm('Are you sure you want to disconnect your WhatsApp account?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/disconnect-account`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (result.success) {
+        setIsConnected(false);
+        setSetupDetails(null);
+        localStorage.removeItem(getWAStorageKey());
+      } else {
+        alert(result.message || 'Failed to disconnect. Please try again.');
+      }
+    } catch (err) {
+      console.error('[Settings] Error disconnecting account', err);
+      alert('Failed to disconnect. Please try again.');
+    }
+  };
+
+  const handleRefreshHealth = async () => {
+    setIsRefreshingHealth(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/health-status`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          setLiveHealth({
+            entities: result.data.health_status?.entities || [],
+            canSendMessage: result.data.health_status?.can_send_message || 'UNKNOWN',
+            updatedAt: new Date().toLocaleString()
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Settings] Error refreshing health status', err);
+    } finally {
+      setIsRefreshingHealth(false);
+    }
   };
 
   useEffect(() => {
@@ -350,8 +441,8 @@ export default function Settings() {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Templates</button>
                   <button style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Manage Contacts</button>
-                  <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Create New Campaign</button>
-                  <button onClick={() => { setIsConnected(false); setSetupDetails(null); localStorage.removeItem(getWAStorageKey()); }} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
+                  <button onClick={() => navigate('/dashboard/campaigns/create')} style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Create New Campaign</button>
+                  <button onClick={handleDisconnect} style={{ backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Disconnect Account</button>
                 </div>
               </div>
             </>
@@ -531,17 +622,57 @@ export default function Settings() {
                     <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Quality Rating</div>
                     <div style={{ fontSize: '0.9rem', color: activePhone?.quality_rating === 'GREEN' ? '#22c55e' : '#ef4444', fontWeight: 700 }}>{activePhone?.quality_rating || 'N/A'}</div>
                   </div>
-                  <div>
-                    <button style={{ backgroundColor: 'white', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}>
-                      <SettingsIcon size={12} /> Update Business Profile
-                    </button>
-                  </div>
                 </div>
               ) : null}
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.8rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', opacity: isConnected ? 1 : 0.5 }} disabled={!isConnected}>Re-sync Phone Numbers</button>
-                <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.5rem 0.8rem', fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', opacity: isConnected ? 1 : 0.5 }} disabled={!isConnected}>Manage Phone Numbers <ExternalLink size={12} /></button>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  disabled={!isConnected || isSyncing}
+                  onClick={handleResyncPhoneNumbers}
+                  style={{
+                    backgroundColor: '#22c55e',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: (isConnected && !isSyncing) ? 'pointer' : 'not-allowed',
+                    opacity: isConnected ? 1 : 0.5,
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                >
+                  {isSyncing ? <><RefreshCw size={13} className="animate-spin" /> Syncing...</> : 'Re-sync Phone Numbers'}
+                </button>
+                <button
+                  disabled={!isConnected}
+                  onClick={() => {
+                    const wabaId = setupDetails?.waba_id;
+                    if (wabaId) {
+                      window.open(`https://business.facebook.com/wa/manage/phone-numbers/?waba_id=${wabaId}`, '_blank');
+                    }
+                  }}
+                  style={{
+                    backgroundColor: '#1e293b',
+                    color: 'white',
+                    border: '1.5px solid #1e293b',
+                    borderRadius: '6px',
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    cursor: isConnected ? 'pointer' : 'not-allowed',
+                    opacity: isConnected ? 1 : 0.5,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Manage Phone Numbers <ExternalLink size={13} />
+                </button>
               </div>
             </div>
 
@@ -555,16 +686,18 @@ export default function Settings() {
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>Status as at</div>
-                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (healthUpdatedAt || setupDetails?.setup_completed_at || '-') : '-'}</div>
+                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (liveHealth?.updatedAt || healthUpdatedAt || setupDetails?.setup_completed_at || '-') : '-'}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 700 }}>Overall Health</div>
-                  <div style={{ fontSize: '0.85rem', color: '#475569' }}>{isConnected ? (activePhone?.status || 'CONNECTED') : '-'}</div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: (liveHealth?.canSendMessage || activePhone?.status) === 'AVAILABLE' ? '#22c55e' : '#475569' }}>
+                    {isConnected ? (liveHealth?.canSendMessage || activePhone?.status || 'CONNECTED') : '-'}
+                  </div>
                 </div>
 
-                {isConnected && healthEntities.length > 0 ? (
+                {isConnected && (liveHealth?.entities || healthEntities).length > 0 ? (
                   <>
-                    {healthEntities.map((entity, index) => (
+                    {(liveHealth?.entities || healthEntities).map((entity, index) => (
                       <div key={index} style={{ border: '1px solid #e2e8f0', borderRadius: '4px', padding: '0.75rem' }}>
                         <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, marginBottom: '0.5rem' }}>{entity.entity_type} {entity.id}</div>
                         <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 700 }}>Can Send Message</div>
@@ -585,8 +718,12 @@ export default function Settings() {
 
             </div>
 
-            <button style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', opacity: isConnected ? 1 : 0.5 }} disabled={!isConnected}>
-              Refresh Status
+            <button
+              onClick={handleRefreshHealth}
+              disabled={!isConnected || isRefreshingHealth}
+              style={{ backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 700, cursor: (isConnected && !isRefreshingHealth) ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: '0.35rem', opacity: isConnected ? 1 : 0.5 }}
+            >
+              {isRefreshingHealth ? <><RefreshCw size={14} className="animate-spin" /> Refreshing...</> : <><RefreshCw size={14} /> Refresh Status</>}
             </button>
 
           </div>
