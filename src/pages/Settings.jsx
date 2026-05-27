@@ -1,6 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
-import { Facebook, ExternalLink, HelpCircle, Check, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { Facebook, ExternalLink, Check, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { decryptData } from '../utils/encryption';
 
 
 
@@ -50,8 +51,17 @@ export default function Settings() {
       });
 
       if (response.ok) {
-        const result = await response.json();
-        if (result.data) {
+        const encryptedResponse = await response.json();
+
+        // API returns encrypted payload — decrypt it (same pattern as WhatsAppChat.jsx)
+        let result;
+        if (encryptedResponse.payload) {
+          result = decryptData(encryptedResponse.payload);
+        } else {
+          result = encryptedResponse; // fallback if not encrypted
+        }
+
+        if (result && result.data) {
           const details = { ...result.data, raw_settings: result.raw_settings };
           setSetupDetails(details);
           setIsConnected(result.data.is_setup_completed);
@@ -65,7 +75,7 @@ export default function Settings() {
           }
           return result.data.is_setup_completed;
         } else {
-          // API returned no data — don't touch localStorage (network issue fallback)
+          // API returned no usable data — keep localStorage as fallback
         }
       }
     } catch (err) {
