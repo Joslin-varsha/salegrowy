@@ -127,7 +127,10 @@ export default function WhatsAppChat() {
     const updatedChats = prev.map(chat => {
       if (!chat) return chat;
 
-      if (String(chat._uid) === String(data.contactUid)) {
+      if (
+  String(chat._uid) === String(data.contactUid) ||
+  String(chat._id) === String(data.contactUid)
+){
 
         const isCurrentChat =
           selectedChatRef.current &&
@@ -142,7 +145,9 @@ export default function WhatsAppChat() {
       ? Number(chat.unread_count || 0) + 1
       : Number(chat.unread_count || 0),
 
-  last_message_time: new Date().toISOString(),
+  last_message_time:
+  data.formatted_last_message_time ||
+  new Date().toISOString(),
 
   last_message:
   selectedChatRef.current &&
