@@ -32,6 +32,21 @@ import SyncProducts from "./pages/SyncProducts";
 import SyncCustomers from "./pages/SyncCustomers";
 import Webhooks from "./pages/Webhooks";
 
+// Redirects logged-in users away from login/register pages
+function PublicRoute() {
+  const token = localStorage.getItem('token');
+  if (token) return <Navigate to="/dashboard" replace />;
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Header />
+      <main className="flex-1" style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'column' }}>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
+
 function App() {
   return (
     <Router>
@@ -41,15 +56,8 @@ function App() {
         <Route path="/callback" element={<ShopifyAuth />} />
         <Route path="/shopify-subscription" element={<ShopifySubscription />} />
 
-        {/* Auth routes with Standard Header Layout */}
-        <Route element={
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1" style={{ padding: '2rem 1rem', display: 'flex', flexDirection: 'column' }}>
-              <Outlet />
-            </main>
-          </div>
-        }>
+        {/* Auth routes — redirect to dashboard if already logged in */}
+        <Route element={<PublicRoute />}>
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<RegisterVendor />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

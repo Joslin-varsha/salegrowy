@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect } from 'react';
-import { History, MessageCircle, ChevronDown, Download, Search, Info } from 'lucide-react';
+import { History, ChevronDown, Download, Search, Info } from 'lucide-react';
 
 
 
@@ -12,6 +12,13 @@ export default function MessageLog() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewLoading, setViewLoading] = useState(false);
   const [selectedLog, setSelectedLog] = useState(null);
+
+  // Filter states
+  const [messageType, setMessageType] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [activeFilters, setActiveFilters] = useState({ messageType: 'All', statusFilter: 'All', startDate: '', endDate: '' });
 
 
   useEffect(() => {
@@ -90,11 +97,29 @@ export default function MessageLog() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredLogs = logs.filter(log =>
-    (log.recipient || log.contact_id || log.to || log.phone_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (log.first_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (log.last_name || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredLogs = logs.filter(log => {
+    // Search filter
+    const matchesSearch =
+      (log.recipient || log.contact_id || log.to || log.phone_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (log.first_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (log.last_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Message type filter
+    const matchesType = activeFilters.messageType === 'All' ||
+      (activeFilters.messageType === 'Incoming' && log.is_incoming_message) ||
+      (activeFilters.messageType === 'Outgoing' && !log.is_incoming_message);
+
+    // Status filter
+    const matchesStatus = activeFilters.statusFilter === 'All' ||
+      (log.status || '').toLowerCase() === activeFilters.statusFilter.toLowerCase();
+
+    // Date range filter
+    const logDate = log.created_at ? new Date(log.created_at) : null;
+    const matchesStart = !activeFilters.startDate || (logDate && logDate >= new Date(activeFilters.startDate));
+    const matchesEnd = !activeFilters.endDate || (logDate && logDate <= new Date(activeFilters.endDate + 'T23:59:59'));
+
+    return matchesSearch && matchesType && matchesStatus && matchesStart && matchesEnd;
+  });
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -104,10 +129,7 @@ export default function MessageLog() {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
           Message Log
         </h1>
-        <button className="btn btn-solid-orange" style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <History size={16} />
-          View Old Message Logs
-        </button>
+        
       </div>
 
       {/* Filters Card */}
@@ -117,7 +139,7 @@ export default function MessageLog() {
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Select Message Type</label>
             <div style={{ position: 'relative' }}>
-              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }}>
+              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }} value={messageType} onChange={e => setMessageType(e.target.value)}>
                 <option>All</option>
                 <option>Outgoing</option>
                 <option>Incoming</option>
@@ -129,11 +151,10 @@ export default function MessageLog() {
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Status</label>
             <div style={{ position: 'relative' }}>
-              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }}>
+              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                 <option>All</option>
-                <option>Accepted</option>
-                <option>Received</option>
                 <option>Read</option>
+                <option>Failed</option>
               </select>
               <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
             </div>
@@ -141,16 +162,17 @@ export default function MessageLog() {
 
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Start Date</label>
-            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} />
+            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>End Date</label>
-            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} />
+            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <button className="btn btn-primary" style={{ padding: '0.6rem 2rem', height: '100%' }}>
+            <button className="btn btn-primary" style={{ padding: '0.6rem 2rem', height: '100%' }}
+              onClick={() => setActiveFilters({ messageType, statusFilter, startDate, endDate })}>
               Show
             </button>
           </div>
@@ -228,13 +250,6 @@ export default function MessageLog() {
                   </td>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button style={{
-                        backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px',
-                        padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
-                        display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer'
-                      }}>
-                        <MessageCircle size={14} />
-                      </button>
                       <button onClick={() => handleView(log._id || log.id)} style={{
                         backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '4px',
                         padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
