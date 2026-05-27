@@ -136,7 +136,14 @@ export default function WhatsAppChat() {
         if (response.ok && data && data.success) {
           const chatsList = data.data?.chats || [];
           setChats(prev => {
-            const newChats = chatsList.filter(c => c);
+            const newChats = chatsList.filter(c => c).map(c => {
+              // Ensure we don't accidentally set unread_count > 0 for the currently open chat
+              const isActive = selectedChatRef.current && String(selectedChatRef.current._id) === String(c._id);
+              if (isActive) {
+                return { ...c, unread_count: 0 };
+              }
+              return c;
+            });
             const existingIds = new Set(newChats.map(c => c._id));
             const remainingOldChats = prev.filter(c => c && !existingIds.has(c._id));
             
@@ -163,7 +170,9 @@ export default function WhatsAppChat() {
 
       if (!data) return;
 
-      let shouldFetchChats = false;
+      // If it's a new message, we MUST fetch chats to get the actual message snippet text,
+      // because the backend Pusher payload does not contain the text.
+      let shouldFetchChats = data.isNewIncomingMessage ? true : false;
 
       setChats(prev => {
         let isFound = false;
