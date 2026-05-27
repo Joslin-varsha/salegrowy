@@ -8,9 +8,13 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const comesFromInstall = location.state?.comesFromInstall || localStorage.getItem('comesFromInstall') || '0';
+  const shouldAskShoplink = String(comesFromInstall) === '1';
+
   const [formData, setFormData] = useState({
     login: '',
-    password: ''
+    password: '',
+    shoplink: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -46,6 +50,10 @@ export default function Login() {
       newErrors.password = "Password is required";
     }
 
+    if (shouldAskShoplink && !formData.shoplink.trim()) {
+      newErrors.shoplink = "Shop link is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -62,6 +70,8 @@ export default function Login() {
 
       try {
         const localStorageShopLink = location.state?.localStorageShopLink || localStorage.getItem('localStorageShopLink') || "";
+        const finalShopLink = shouldAskShoplink ? formData.shoplink : localStorageShopLink;
+        
         const response = await fetch( `${import.meta.env.VITE_API_URL}/api/vendor/login`, {
           method: 'POST',
           headers: {
@@ -71,8 +81,7 @@ export default function Login() {
             data: encryptData({
               loginField: formData.login,
               password: formData.password,
-              localStorageShopLink: location.state?.localStorageShopLink ? localStorageShopLink : "",
-              status: location.state?.localStorageShopLink ? 1 : 0
+              localStorageShopLink: finalShopLink
             })
           })
         });
@@ -164,6 +173,33 @@ export default function Login() {
                   Mobile number should be with country code without 0 or +
                 </div>
               </div>
+
+              {shouldAskShoplink && (
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label className="form-label" style={{ fontSize: '0.8rem' }}>Shopify Store Link</label>
+                  <div className="input-wrapper">
+                    <LogIn size={18} className="input-icon" />
+                    <input
+                      type="text"
+                      name="shoplink"
+                      value={formData.shoplink}
+                      onChange={handleChange}
+                      className="form-input"
+                      placeholder="e.g. mystore.myshopify.com"
+                      style={{ padding: '0.6rem 1rem 0.6rem 2.5rem' }}
+                    />
+                  </div>
+
+                  {errors.shoplink && (
+                    <div style={{ color: 'red', fontSize: '0.75rem' }}>
+                      {errors.shoplink}
+                    </div>
+                  )}
+                  <div className="form-helper" style={{ fontSize: '0.7rem' }}>
+                    Required for your manual login
+                  </div>
+                </div>
+              )}
 
               <div className="form-group" style={{ marginBottom: '1rem' }}>
                 <label className="form-label" style={{ fontSize: '0.8rem' }}>Password</label>
