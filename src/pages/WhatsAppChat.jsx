@@ -118,37 +118,77 @@ export default function WhatsAppChat() {
     const channel = pusher.subscribe(channelName);
 
     channel.bind('whatsappChat', (data) => {
-      console.log("PUSHER EVENT RECEIVED", data);
+  console.log("PUSHER EVENT RECEIVED", data);
 
   if (!data) return;
 
-  const isCurrentChat = selectedChatRef.current && (
-    String(selectedChatRef.current._uid) === String(data.contactUid)
-  );
+  // UPDATE SIDEBAR INSTANTLY
+  setChats(prev => {
+    const updatedChats = prev.map(chat => {
+      if (!chat) return chat;
 
-  // Active chat refresh
+      if (String(chat._uid) === String(data.contactUid)) {
+
+        const isCurrentChat =
+          selectedChatRef.current &&
+          String(selectedChatRef.current._uid) === String(data.contactUid);
+
+        return {
+  ...chat,
+
+  unread_count: isCurrentChat
+    ? 0
+    : data.isNewIncomingMessage
+      ? Number(chat.unread_count || 0) + 1
+      : Number(chat.unread_count || 0),
+
+  last_message_time: new Date().toISOString(),
+
+  last_message:
+  selectedChatRef.current &&
+  String(selectedChatRef.current._uid) === String(data.contactUid)
+    ? messages[messages.length - 1]?.message || chat.last_message
+    : chat.last_message
+};
+      }
+
+      return chat;
+    });
+
+    updatedChats.sort((a, b) => {
+      return new Date(b.last_message_time || 0)
+        - new Date(a.last_message_time || 0);
+    });
+
+    return [...updatedChats];
+  });
+
+  const isCurrentChat =
+  selectedChatRef.current &&
+  String(selectedChatRef.current._uid) === String(data.contactUid);
+
+  // Refresh current opened chat only
   if (isCurrentChat) {
     fetchHistorySilent(selectedChatRef.current);
   }
 
-  // Refresh sidebar instantly
-  fetchChats(1, searchQueryRef.current);
+  // Message status update
+  if (data.message_status && data.lastMessageUid) {
+  setMessages(prev =>
+    prev.map(m => {
+      const msgUid = String(m._uid || m.wamid || m.logId);
 
-  // Update message status
-  if (data.message_status && isCurrentChat) {
-    setMessages(prev => prev.map(m => {
-      const mId = m._id || m.logId || m.wamid || m.message_id;
-
-      if (mId && (
-        mId === data.lastMessageUid ||
-        m._uid === data.lastMessageUid
-      )) {
-        return { ...m, status: data.message_status };
+      if (msgUid === String(data.lastMessageUid)) {
+        return {
+          ...m,
+          status: data.message_status
+        };
       }
 
       return m;
-    }));
-  }
+    })
+  );
+}
 });
 
     return () => {
@@ -529,7 +569,9 @@ return [...prev, ...filteredNewMessages];
             return {
               ...c,
               last_message: messageText,
-              last_message_time: new Date().toISOString(),
+              last_message_time:
+  data.formatted_last_message_time ||
+  new Date().toISOString(),
               unread_count: 0
             };
           }
