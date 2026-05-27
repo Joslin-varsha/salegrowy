@@ -113,17 +113,15 @@ export default function RegisterVendor() {
         }
         // const data = await response.json();
 
-        if (response.ok && data.success) {
-          setApiMessage({ type: 'success', text: 'Registration successful! Redirecting to subscription...' });
-          console.log("Register Success", data);
-          
-          // Capture the new vendorId exactly as per your backend response
-          const newVendorId = data.data?.vendorId || data.data?._id || data.data?.id;
-          console.log("Captured Vendor ID:", newVendorId);
-
-          if (newVendorId) {
-             localStorage.setItem('vendor_id', newVendorId);
-          }
+          if (response.ok && data.success) {
+            setApiMessage({ type: 'success', text: 'Registration successful! Redirecting to subscription...' });
+            
+            // Capture the new vendorId exactly as per your backend response
+            const newVendorId = data.data?.vendorId || data.data?._id || data.data?.id;
+  
+            if (newVendorId) {
+               localStorage.setItem('vendor_id', newVendorId);
+            }
           
           const token = data.token || data.data?.token
           if (token) {

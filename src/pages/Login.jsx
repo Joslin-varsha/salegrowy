@@ -86,7 +86,6 @@ export default function Login() {
         if (response.ok && data.success) {
           setApiMessage({ type: 'success', text: 'Login successful!' });
 
-          console.log("Login Success", data);
           if (data?.data?.token) {
 
             localStorage.setItem("token", data.data.token);

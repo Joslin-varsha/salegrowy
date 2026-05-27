@@ -45,14 +45,11 @@ export default function VendorDashboard() {
           }
         });
 
-        console.log("STATUS:", response.status);
-
         if (!response.ok) {
           throw new Error("API not found or server error");
         }
 
         const result = await response.json();
-        console.log("RESPONSE:", result);
 
         if (result.success) {
           setDashboardData(result.data);

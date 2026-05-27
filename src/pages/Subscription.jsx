@@ -1,41 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check, X, Shield, Star, Zap, Crown, Loader2 } from 'lucide-react';
 
 
 const Subscription = () => {
   const [loadingPlan, setLoadingPlan] = useState(null);
-  const [userData, setUserData] = useState({ vendor_id: '', shopLink: '' });
-
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const vId = localStorage.getItem('vendor_id') || '';
-        let sLink = localStorage.getItem('shop_link') || '';
-
-        // Fetch profile to get shopLink (website) if missing
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/createSubscription`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const result = await res.json();
-
-        if (result.success) {
-          sLink = result.data.user.website || result.data.user.shopLink || sLink;
-        }
-
-        setUserData({ vendor_id: vId, shopLink: sLink });
-      } catch (err) {
-        console.error("Error fetching user data for subscription:", err);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   const handleBuyPlan = async (planName) => {
     setLoadingPlan(planName);
     try {
+      const token = localStorage.getItem('token');
       const payload = {
         plan: planName.toLowerCase()
       };
