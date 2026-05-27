@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Webhook, Play } from 'lucide-react';
+import { Webhook, Play, Check } from 'lucide-react';
 
 export default function Webhooks() {
   const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('webhooks_enabled') === 'true');
@@ -58,12 +58,13 @@ export default function Webhooks() {
             Enable outgoing webhooks for your account to receive real-time event payloads.
           </p>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem', backgroundColor: isEnabled ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${isEnabled ? '#bbf7d0' : '#e2e8f0'}` }}>
+          <div style={{ display: 'flex', alignItems: isEnabled ? 'flex-start' : 'center', gap: '1rem', padding: '1.5rem', backgroundColor: isEnabled ? '#f0fdf4' : '#f8fafc', borderRadius: '8px', border: `1px solid ${isEnabled ? '#bbf7d0' : '#e2e8f0'}` }}>
             <div style={{ 
               width: '48px', height: '48px', borderRadius: '50%', 
               backgroundColor: isEnabled ? '#22c55e' : '#94a3b8', 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', transition: 'all 0.3s ease'
+              color: 'white', transition: 'all 0.3s ease',
+              marginTop: isEnabled ? '4px' : '0'
             }}>
               <Webhook size={24} />
             </div>
@@ -75,6 +76,31 @@ export default function Webhooks() {
               <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
                 {isEnabled ? 'Your webhook is active and ready to receive events.' : 'Enable the webhook to start receiving events.'}
               </div>
+              {isEnabled && (
+                <div style={{ 
+                  backgroundColor: '#ffffff', 
+                  borderRadius: '8px', 
+                  border: '1px solid #e2e8f0', 
+                  padding: '0.75rem 1rem', 
+                  marginTop: '0.75rem',
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
+                }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#475569', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
+                      <span>Customer Creation & Update</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
+                      <span>Cart Creation & Update</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Check size={14} style={{ color: '#22c55e', flexShrink: 0 }} />
+                      <span>Order Creation & Update</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {!isEnabled && (
