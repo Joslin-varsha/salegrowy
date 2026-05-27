@@ -106,20 +106,24 @@ export default function WhatsAppChat() {
 
   // Make vendorUid a state variable to handle async storage
   const [vendorUid, setVendorUid] = useState(() => localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id'));
+  const [vendorIntId, setVendorIntId] = useState(() => localStorage.getItem('vendor_int_id'));
 
   // If vendorUid is not present, poll localStorage (in case DashboardLayout is still fetching profile)
   useEffect(() => {
-    if (!vendorUid) {
+    if (!vendorUid || !vendorIntId) {
       const interval = setInterval(() => {
         const uid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
-        if (uid) {
-          setVendorUid(uid);
+        const intId = localStorage.getItem('vendor_int_id');
+        if (uid) setVendorUid(uid);
+        if (intId) setVendorIntId(intId);
+        
+        if (uid && intId) {
           clearInterval(interval);
         }
       }, 500);
       return () => clearInterval(interval);
     }
-  }, [vendorUid]);
+  }, [vendorUid, vendorIntId]);
 
   // Real-time integration via Pusher
   useEffect(() => {
@@ -135,8 +139,15 @@ export default function WhatsAppChat() {
 
     const channelName = `whatsappChat${vendorUid}`;
     const channel = pusher.subscribe(channelName);
+    
+    // Fallback channel in case the backend $vendorUid is empty/missing
+    const fallbackChannel = pusher.subscribe('whatsappChat');
+    
+    // Fallback channel for integer ID
+    const intChannelName = `whatsappChat${vendorIntId || ''}`;
+    const intChannel = pusher.subscribe(intChannelName);
 
-    channel.bind('whatsappChat', (data) => {
+    const handlePusherEvent = (data) => {
       console.log('Received Pusher Real-time WhatsApp Message:', data);
       if (!data) return;
 
@@ -209,14 +220,22 @@ export default function WhatsAppChat() {
           return m;
         }));
       }
-    });
+    };
+
+    channel.bind('whatsappChat', handlePusherEvent);
+    fallbackChannel.bind('whatsappChat', handlePusherEvent);
+    intChannel.bind('whatsappChat', handlePusherEvent);
 
     return () => {
       channel.unbind_all();
+      fallbackChannel.unbind_all();
+      intChannel.unbind_all();
       pusher.unsubscribe(channelName);
+      pusher.unsubscribe('whatsappChat');
+      pusher.unsubscribe(intChannelName);
       pusher.disconnect();
     };
-  }, []);
+  }, [vendorUid, vendorIntId]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
