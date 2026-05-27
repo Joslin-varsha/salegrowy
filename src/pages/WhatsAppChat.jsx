@@ -142,7 +142,26 @@ export default function WhatsAppChat() {
               if (isActive) {
                 return { ...c, unread_count: 0 };
               }
-              return c;
+              // Preserve frontend unread_count since the backend API might be lagging or omit it
+              const existingChat = prev.find(p => String(p._id) === String(c._id));
+              const frontendUnread = existingChat ? Number(existingChat.unread_count || 0) : 0;
+              const backendUnread = Number(c.unread_count || 0);
+              
+              // Preserve frontend last_message_time if it's newer (prevents chat jumping down)
+              let finalTime = c.last_message_time;
+              if (existingChat && existingChat.last_message_time) {
+                 const existingTime = new Date(existingChat.last_message_time).getTime();
+                 const incomingTime = new Date(c.last_message_time || 0).getTime();
+                 if (existingTime > incomingTime) {
+                    finalTime = existingChat.last_message_time;
+                 }
+              }
+
+              return { 
+                ...c, 
+                unread_count: Math.max(frontendUnread, backendUnread),
+                last_message_time: finalTime
+              };
             });
             const existingIds = new Set(newChats.map(c => c._id));
             const remainingOldChats = prev.filter(c => c && !existingIds.has(c._id));
@@ -180,28 +199,32 @@ export default function WhatsAppChat() {
         const updatedChats = prev.map(chat => {
           if (!chat) return chat;
 
-          const matched =
-            String(chat._uid || '') === String(data.contactUid || '');
+          // Make matching extremely robust across all possible ID fields
+          const cUid = String(chat._uid || chat.contact_uid || chat.contactUid || chat.wa_id || chat._id || chat.id || '');
+          const dUid = String(data.contactUid || '');
+          const matched = cUid === dUid || String(chat._id || '') === dUid;
 
           if (!matched) return chat;
 
           isFound = true;
           const isCurrentChat =
             selectedChatRef.current &&
-            String(selectedChatRef.current._uid || '') === String(data.contactUid || '');
+            (String(selectedChatRef.current._uid || selectedChatRef.current._id || '') === dUid);
+
+          // Robust check for boolean, 1, or '1', or null message_status
+          const isNew = data.isNewIncomingMessage === true || data.isNewIncomingMessage === 1 || data.isNewIncomingMessage === '1' || data.isNewIncomingMessage === 'true' || data.message_status == null;
 
           return {
             ...chat,
             unread_count:
               isCurrentChat
                 ? 0
-                : data.isNewIncomingMessage
+                : isNew
                   ? Number(chat.unread_count || 0) + 1
                   : Number(chat.unread_count || 0),
-            last_message_time:
-              data.formatted_last_message_time ||
-              chat.last_message_time ||
-              new Date().toISOString()
+            // FORCE the timestamp to NOW so it instantly jumps to the top locally, 
+            // completely ignoring stale backend times!
+            last_message_time: data.formatted_last_message_time || new Date().toISOString()
           };
         });
 
@@ -492,8 +515,8 @@ export default function WhatsAppChat() {
         if (historyList.length > 0) {
   const latestMessage = historyList[historyList.length - 1];
 
-  setChats(prev =>
-    prev.map(c => {
+  setChats(prev => {
+    const updatedChats = prev.map(c => {
       if (c && c._id === chatItem._id) {
         return {
           ...c,
@@ -507,8 +530,9 @@ export default function WhatsAppChat() {
         };
       }
       return c;
-    })
-  );
+    });
+    return [...updatedChats].sort((a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0));
+  });
 }
 
         if (historyList.length > 0) {
@@ -624,19 +648,22 @@ return [...prev, ...filteredNewMessages];
 }, 1000);
 
         // Update the chats list last message snippet
-        setChats(prev => prev.map(c => {
-          if (c && c._id === selectedChat._id) {
-            return {
-              ...c,
-              last_message: messageText,
-              last_message_time:
-  data.formatted_last_message_time ||
-  new Date().toISOString(),
-              unread_count: 0
-            };
-          }
-          return c;
-        }));
+        setChats(prev => {
+          const updatedChats = prev.map(c => {
+            if (c && c._id === selectedChat._id) {
+              return {
+                ...c,
+                last_message: messageText,
+                last_message_time:
+                  data.formatted_last_message_time ||
+                  new Date().toISOString(),
+                unread_count: 0
+              };
+            }
+            return c;
+          });
+          return [...updatedChats].sort((a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0));
+        });
       } else {
         alert(data?.message || 'Error sending message. Please try again.');
         setInputText(messageText);
