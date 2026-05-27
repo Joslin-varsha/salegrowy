@@ -104,10 +104,29 @@ export default function WhatsAppChat() {
     searchQueryRef.current = searchQuery;
   }, [searchQuery]);
 
+  // Make vendorUid a state variable to handle async storage
+  const [vendorUid, setVendorUid] = useState(() => localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id'));
+
+  // If vendorUid is not present, poll localStorage (in case DashboardLayout is still fetching profile)
+  useEffect(() => {
+    if (!vendorUid) {
+      const interval = setInterval(() => {
+        const uid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
+        if (uid) {
+          setVendorUid(uid);
+          clearInterval(interval);
+        }
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [vendorUid]);
+
   // Real-time integration via Pusher
   useEffect(() => {
-    const vendorUid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
     if (!vendorUid) return;
+
+    // Enable logging so we can see real-time connections and events in the browser console
+    Pusher.logToConsole = true;
 
     const pusher = new Pusher('47cad4071c70ec772da2', {
       cluster: 'ap2',
@@ -164,7 +183,7 @@ export default function WhatsAppChat() {
         const updatedChats = [...prev];
         const chatItem = { ...updatedChats[index] };
         
-        chatItem.last_message = data.messageText || chatItem.last_message;
+        chatItem.last_message = data.contactDescription || data.messageText || chatItem.last_message;
         chatItem.last_message_time = data.formatted_last_message_time || new Date().toISOString();
         
         if (isIncoming) {
