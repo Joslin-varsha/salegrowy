@@ -86,6 +86,21 @@ const formatMessageDate = (dateString) => {
   return `${dayName} ${getOrdinal(dayOfMonth)} ${monthName} ${year} ${hours}:${minutes}:${seconds} ${ampm}`;
 };
 
+const fetchWithTimeout = async (url, options = {}, timeout = 15000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+};
+
 export default function WhatsAppChat() {
   const [chats, setChats] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,197 +119,119 @@ export default function WhatsAppChat() {
     searchQueryRef.current = searchQuery;
   }, [searchQuery]);
 
+  const pusherRef = useRef(null);
+const channelRef = useRef([]);
+
   // Real-time integration via Pusher
   useEffect(() => {
-    const vendorUid = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id');
-    if (!vendorUid) return;
+  const vendorUid =
+    localStorage.getItem('vendor_uid') ||
+    localStorage.getItem('vendor_id');
 
-    const fetchChatsSilent = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/list`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            data: encryptData({
-              page: '1',
-              limit: '15',
-              search: searchQueryRef.current || ''
-            })
-          })
-        });
+  if (!vendorUid) return;
 
-        const encryptedResponse = await response.json();
-        let data = encryptedResponse;
-        if (encryptedResponse && encryptedResponse.payload) {
-          data = decryptData(encryptedResponse.payload);
-        }
+  // Prevent duplicate connections
+  if (pusherRef.current) {
+  pusherRef.current.disconnect();
+}
 
-        if (response.ok && data && data.success) {
-          const chatsList = data.data?.chats || [];
-          setChats(prev => {
-            const newChats = chatsList.filter(c => c).map(c => {
-              // Ensure we don't accidentally set unread_count > 0 for the currently open chat
-              const isActive = selectedChatRef.current && String(selectedChatRef.current._id) === String(c._id);
-              if (isActive) {
-                return { ...c, unread_count: 0 };
-              }
-              // Preserve frontend unread_count since the backend API might be lagging or omit it
-              const existingChat = prev.find(p => String(p._id) === String(c._id));
-              const frontendUnread = existingChat ? Number(existingChat.unread_count || 0) : 0;
-              const backendUnread = Number(c.unread_count || 0);
-              
-              // Preserve frontend last_message_time if it's newer (prevents chat jumping down)
-              let finalTime = c.last_message_time;
-              if (existingChat && existingChat.last_message_time) {
-                 const existingTime = new Date(existingChat.last_message_time).getTime();
-                 const incomingTime = new Date(c.last_message_time || 0).getTime();
-                 if (existingTime > incomingTime) {
-                    finalTime = existingChat.last_message_time;
-                 }
-              }
+  Pusher.logToConsole = import.meta.env.DEV;
 
-              return { 
-                ...c, 
-                unread_count: Math.max(frontendUnread, backendUnread),
-                last_message_time: finalTime
-              };
-            });
-            const existingIds = new Set(newChats.map(c => c._id));
-            const remainingOldChats = prev.filter(c => c && !existingIds.has(c._id));
-            
-            return [...newChats, ...remainingOldChats].sort((a, b) => 
-              new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0)
-            );
-          });
-        }
-      } catch (err) {
-        console.error('Error in silent chat fetch:', err);
+  const pusher = new Pusher('47cad4071c70ec772da2', {
+    cluster: 'ap2',
+    forceTLS: true
+  });
+
+  pusherRef.current = pusher;
+
+  console.log("✅ Creating ONE Pusher connection");
+
+  pusher.connection.bind('connected', () => {
+    console.log('✅ Pusher connected');
+  });
+
+  pusher.connection.bind('error', (err) => {
+    console.log('❌ Pusher error:', err);
+  });
+
+  // 🐛 DEBUG: Listen to ALL events to see if anything arrives from backend
+  pusher.bind_global((eventName, data) => {
+    console.log("🌍 GLOBAL PUSHER EVENT:", eventName, data);
+  });
+
+  const possibleChannels = [
+    `whatsappChat${vendorUid}`
+  ];
+
+  channelRef.current = [];
+
+  possibleChannels.forEach((channelName) => {
+  console.log("📡 Subscribing:", channelName);
+
+  const channel = pusher.subscribe(channelName);
+
+  channelRef.current.push(channel);
+
+  channel.bind('pusher:subscription_succeeded', () => {
+    console.log('✅ Subscription success:', channelName);
+  });
+
+ channel.bind('whatsappChat', (data) => {
+  console.log('🔥 EVENT:', data);
+
+  if (!data) return;
+
+  const contactUid = String(data.contactUid);
+  const selectedId = selectedChatRef.current ? String(selectedChatRef.current._id || selectedChatRef.current._uid) : null;
+
+  // Refresh chats instantly without API call
+  setChats(prev => {
+    const updated = prev.map(c => {
+      if (!c) return c;
+
+      if (String(c._id || c._uid) === contactUid) {
+        return {
+          ...c,
+          last_message: data.contactDescription || c.last_message,
+          last_message_time: data.formatted_last_message_time || c.last_message_time,
+          unread_count: 
+            selectedId === contactUid 
+              ? 0 
+              : (c.unread_count || 0) + (data.isNewIncomingMessage ? 1 : 0)
+        };
       }
-    };
 
-    const pusher = new Pusher('47cad4071c70ec772da2', {
-      cluster: 'ap2',
-      forceTLS: true
+      return c;
     });
 
-    const channelName = `whatsappChat${vendorUid}`;
-    const channel = pusher.subscribe(channelName);
+    return [...updated].sort(
+      (a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0)
+    );
+  });
 
-    channel.bind('whatsappChat', (data) => {
-      console.log("PUSHER EVENT RECEIVED", data);
+  // Refresh opened chat instantly
+  if (selectedId === contactUid) {
+    fetchHistorySilent(selectedChatRef.current);
+  }
+});
+  });
 
-      if (!data) return;
+  return () => {
+    console.log("🧹 Cleaning pusher");
 
-      // Always fetch chats silently to guarantee the sidebar snippet and unread counts 
-      // are perfectly in sync with the backend, especially since the payload lacks the message text.
-      let shouldFetchChats = true;
-
-      setChats(prev => {
-        let isFound = false;
-
-        const updatedChats = prev.map(chat => {
-          if (!chat) return chat;
-
-          // Make matching extremely robust across all possible ID fields
-          const cUid = String(chat._uid || chat.contact_uid || chat.contactUid || chat.wa_id || chat._id || chat.id || '');
-          const dUid = String(data.contactUid || '');
-          const matched = cUid === dUid || String(chat._id || '') === dUid;
-
-          if (!matched) return chat;
-
-          isFound = true;
-          const isCurrentChat =
-            selectedChatRef.current &&
-            (String(selectedChatRef.current._uid || selectedChatRef.current._id || '') === dUid);
-
-          // Robust check for boolean, 1, or '1', or null message_status
-          const isNew = data.isNewIncomingMessage === true || data.isNewIncomingMessage === 1 || data.isNewIncomingMessage === '1' || data.isNewIncomingMessage === 'true' || data.message_status == null;
-
-          return {
-            ...chat,
-            unread_count:
-              isCurrentChat
-                ? 0
-                : isNew
-                  ? Number(chat.unread_count || 0) + 1
-                  : Number(chat.unread_count || 0),
-            // FORCE the timestamp to NOW so it instantly jumps to the top locally, 
-            // completely ignoring stale backend times!
-            last_message_time: data.formatted_last_message_time || new Date().toISOString()
-          };
-        });
-
-        if (!isFound && data.contactUid) {
-          shouldFetchChats = true;
-          // Forcefully inject the brand new chat so it appears in the sidebar instantly!
-          // This ensures that even if you message from a brand new mobile number,
-          // the chat will pop up instantly. It will be replaced by the fully-populated
-          // database chat a few seconds later when the silent fetch catches up.
-          updatedChats.push({
-            _uid: data.contactUid,
-            _id: data.contactUid, 
-            contact_uid: data.contactUid,
-            first_name: data.contactDescription || 'New Contact',
-            last_name: '',
-            phone_number: data.contactDescription || '',
-            unread_count: 1,
-            last_message_time: new Date().toISOString(),
-            last_message: 'New message...'
-          });
-        }
-
-        return [...updatedChats].sort((a, b) =>
-          new Date(b.last_message_time || 0) -
-          new Date(a.last_message_time || 0)
-        );
-      });
-
-      if (shouldFetchChats) {
-        // Use a 1000ms delay to prevent race conditions where the backend database
-        // hasn't fully committed the new message before we fetch it.
-        setTimeout(() => {
-          fetchChatsSilent();
-        }, 1000);
-      }
-
-      const isCurrentChat =
-        selectedChatRef.current &&
-        String(selectedChatRef.current._uid) === String(data.contactUid);
-
-      // Refresh currently opened chat only
-      if (isCurrentChat) {
-        setTimeout(() => {
-          fetchHistorySilent(selectedChatRef.current);
-        }, 1000);
-      }
-
-      // Message status update
-      if (data.message_status && data.lastMessageUid) {
-        setMessages(prev =>
-          prev.map(m => {
-            const msgUid = String(m._uid || m.wamid || m.logId);
-            if (msgUid === String(data.lastMessageUid)) {
-              return {
-                ...m,
-                status: data.message_status
-              };
-            }
-            return m;
-          })
-        );
-      }
-    });
-
-    return () => {
+    channelRef.current.forEach((channel) => {
       channel.unbind_all();
-      pusher.unsubscribe(channelName);
-      pusher.disconnect();
-    };
-  }, []);
+      pusher.unsubscribe(channel.name);
+    });
+
+    pusher.disconnect();
+
+    pusherRef.current = null;
+    channelRef.current = [];
+  };
+}, []);
+ 
+
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
@@ -325,11 +262,22 @@ export default function WhatsAppChat() {
     if (!selectedChat) return;
 
     // Scroll to bottom on chat change
+    if (!chatBodyRef.current) return;
+
+const isNearBottom =
+  chatBodyRef.current.scrollHeight -
+  chatBodyRef.current.scrollTop -
+  chatBodyRef.current.clientHeight < 200;
+
+if (isNearBottom) {
+  setTimeout(() => {
     scrollToBottom();
+  }, 100);
+}
 
     const interval = setInterval(() => {
   fetchHistorySilent(selectedChat);
-}, 15000);
+}, 30000);
 
     return () => clearInterval(interval);
   }, [selectedChat]);
@@ -361,7 +309,7 @@ export default function WhatsAppChat() {
         setLoadingChats(true);
       }
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/list`, {
+      const response = await fetchWithTimeout(`${import.meta.env.VITE_API_URL}/api/chat/list`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -374,7 +322,7 @@ export default function WhatsAppChat() {
             search: searchVal
           })
         })
-      });
+      }, 15000);
 
       const encryptedResponse = await response.json();
       let data = encryptedResponse;
@@ -402,7 +350,11 @@ export default function WhatsAppChat() {
         if (!append) setChats([]);
       }
     } catch (err) {
-      console.error('Error fetching chats:', err);
+      if (err.name === 'AbortError') {
+        console.warn('fetchChats request timed out');
+      } else {
+        console.error('Error fetching chats:', err);
+      }
       if (!append) setChats([]);
     } finally {
       setLoadingChats(false);
@@ -425,7 +377,7 @@ export default function WhatsAppChat() {
       const scrollHeightBefore = chatBodyRef.current?.scrollHeight || 0;
 
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/history`, {
+      const response = await fetchWithTimeout(`${import.meta.env.VITE_API_URL}/api/chat/history`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -438,7 +390,7 @@ export default function WhatsAppChat() {
             contactId: Number(chatItem._id)
           })
         })
-      });
+      }, 15000);
 
       const encryptedResponse = await response.json();
       let data = encryptedResponse;
@@ -486,7 +438,11 @@ export default function WhatsAppChat() {
         if (!append) setMessages([]);
       }
     } catch (err) {
-      console.error('Error fetching history:', err);
+      if (err.name === 'AbortError') {
+        console.warn('fetchHistory request timed out');
+      } else {
+        console.error('Error fetching history:', err);
+      }
       if (!append) setMessages([]);
     } finally {
       isLoadingHistoryRef.current = false;
@@ -503,7 +459,7 @@ export default function WhatsAppChat() {
     if (!chatItem) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/history`, {
+      const response = await fetchWithTimeout(`${import.meta.env.VITE_API_URL}/api/chat/history`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -516,7 +472,7 @@ export default function WhatsAppChat() {
             contactId: Number(chatItem._id)
           })
         })
-      });
+      }, 15000);
 
       const encryptedResponse = await response.json();
       let data = encryptedResponse;
@@ -586,13 +542,20 @@ export default function WhatsAppChat() {
     scrollToBottom();
   }, 100);
 
-  const existingIds = new Set(
-  prev.map(m => m._id || m.logId || m.wamid)
+  const existingKeys = new Set(
+  prev.map(
+    m =>
+      (m._id || m.logId || m.wamid || '') +
+      (m.message || m.text || '')
+  )
 );
 
 const filteredNewMessages = newMessages.filter(m => {
-  const id = m._id || m.logId || m.wamid;
-  return !existingIds.has(id);
+  const key =
+    (m._id || m.logId || m.wamid || '') +
+    (m.message || m.text || '');
+
+  return !existingKeys.has(key);
 });
 
 return [...prev, ...filteredNewMessages];
@@ -603,7 +566,11 @@ return [...prev, ...filteredNewMessages];
         }
       }
     } catch (err) {
-      console.error('Error polling history:', err);
+      if (err.name === 'AbortError') {
+        console.warn('fetchHistorySilent request timed out');
+      } else {
+        console.error('Error polling history:', err);
+      }
     }
   };
 
@@ -626,7 +593,7 @@ return [...prev, ...filteredNewMessages];
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chat/send`, {
+      const response = await fetchWithTimeout(`${import.meta.env.VITE_API_URL}/api/chat/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -638,7 +605,7 @@ return [...prev, ...filteredNewMessages];
             contactId: Number(selectedChat._id)
           })
         })
-      });
+      }, 15000);
 
       const encryptedResponse = await response.json();
       let data = encryptedResponse;
@@ -655,7 +622,17 @@ return [...prev, ...filteredNewMessages];
         };
         
         // Append sent message to local view immediately
-        setMessages(prev => [...prev, newMsg]);
+        setMessages(prev => {
+   const exists = prev.some(
+      m =>
+        (m._id && m._id === newMsg._id) ||
+        (m.wamid && m.wamid === newMsg.wamid)
+   );
+
+   if (exists) return prev;
+
+   return [...prev, newMsg];
+});
         scrollToBottom();
 
         setTimeout(() => {
@@ -684,7 +661,11 @@ return [...prev, ...filteredNewMessages];
         setInputText(messageText);
       }
     } catch (err) {
-      console.error('Error sending message:', err);
+      if (err.name === 'AbortError') {
+        console.warn('handleSendMessage request timed out');
+      } else {
+        console.error('Error sending message:', err);
+      }
       setInputText(messageText);
     } finally {
       setSending(false);
@@ -1232,7 +1213,7 @@ return [...prev, ...filteredNewMessages];
                     const incoming = isMessageIncoming(msg);
                     return (
                     <div
-                      key={msg._id || index}
+                      key={msg._id || msg.logId || msg.wamid || index}
                       style={{
                         display: 'flex',
                         justifyContent: incoming ? 'flex-start' : 'flex-end',
