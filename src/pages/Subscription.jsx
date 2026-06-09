@@ -105,7 +105,7 @@ const Subscription = () => {
 
   return (
     <div className="p-4 bg-slate-50 min-h-full">
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         <div className="mb-6">
           <h1 className="text-xl font-bold text-slate-900">Subscription Plans</h1>
           <p className="text-slate-500 text-xs mt-0.5">Upgrade your account to unlock premium features</p>

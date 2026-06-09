@@ -92,7 +92,7 @@ export default function SyncProducts() {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
       
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -152,7 +152,7 @@ export default function SyncProducts() {
                 <th style={{ padding: '0.75rem 1rem', width: '30px', textAlign: 'center' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SEL</span>
                 </th>
-                <th style={{ padding: '0.75rem 1rem', width: '60px' }}>
+                <th style={{ padding: '0.75rem 1rem', width: '84px' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Image</span>
                 </th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Title</th>
@@ -196,11 +196,11 @@ export default function SyncProducts() {
                           <img
                             alt={item.title}
                             src={item.images[0].src}
-                            style={{ width: '40px', height: '40px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                            style={{ width: '80px', height: '80px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
                           />
                         ) : (
-                          <div style={{ width: '40px', height: '40px', borderRadius: '4px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-                            <Box size={20} />
+                          <div style={{ width: '64px', height: '64px', borderRadius: '6px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+                            <Box size={28} />
                           </div>
                         )}
                       </td>

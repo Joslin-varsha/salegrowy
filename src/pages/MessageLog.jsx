@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect } from 'react';
-import { History, ChevronDown, Download, Search, Info } from 'lucide-react';
+import { History, ChevronDown, Download, Search, Info, Eye } from 'lucide-react';
 
 
 
@@ -158,7 +158,7 @@ export default function MessageLog() {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -169,45 +169,45 @@ export default function MessageLog() {
       </div>
 
       {/* Filters Card */}
-      <div className="card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '1.5rem', alignItems: 'flex-end' }}>
+      <div className="card" style={{ padding: '1rem', marginBottom: '1.5rem', maxWidth: '1000px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: '1rem', alignItems: 'flex-end' }}>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>Select Message Type</label>
+            <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.3rem' }}>Select Message Type</label>
             <div style={{ position: 'relative' }}>
-              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }} value={messageType} onChange={e => setMessageType(e.target.value)}>
+              <select className="form-input" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', appearance: 'none' }} value={messageType} onChange={e => setMessageType(e.target.value)}>
                 <option>All</option>
                 <option>Outgoing</option>
                 <option>Incoming</option>
               </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>Status</label>
+            <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.3rem' }}>Status</label>
             <div style={{ position: 'relative' }}>
-              <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <select className="form-input" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', appearance: 'none' }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
                 <option>All</option>
                 <option>Read</option>
                 <option>Failed</option>
               </select>
-              <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>Start Date</label>
-            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
+            <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.3rem' }}>Start Date</label>
+            <input type="date" className="form-input" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} value={startDate} onChange={e => setStartDate(e.target.value)} />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>End Date</label>
-            <input type="date" className="form-input" style={{ padding: '0.6rem 1rem' }} value={endDate} onChange={e => setEndDate(e.target.value)} />
+            <label className="form-label" style={{ fontSize: '0.75rem', marginBottom: '0.3rem' }}>End Date</label>
+            <input type="date" className="form-input" style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }} value={endDate} onChange={e => setEndDate(e.target.value)} />
           </div>
 
           <div className="form-group" style={{ marginBottom: 0 }}>
-            <button className="btn btn-primary" style={{ padding: '0.6rem 2rem', height: '100%' }}
+            <button className="btn btn-primary" style={{ padding: '0.4rem 1.5rem', height: '100%', fontSize: '0.85rem' }}
               onClick={() => setActiveFilters({ messageType, statusFilter, startDate, endDate })}>
               Show
             </button>
@@ -261,7 +261,7 @@ export default function MessageLog() {
                 <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
                 <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Via</th>
                 <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Action</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>View</th>
               </tr>
             </thead>
             <tbody>
@@ -291,7 +291,7 @@ export default function MessageLog() {
                         padding: '0.4rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
                         display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer'
                       }}>
-                        <Info size={14} />
+                        <Eye size={14} />
                       </button>
                     </div>
                   </td>

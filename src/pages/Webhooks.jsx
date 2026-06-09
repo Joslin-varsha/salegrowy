@@ -43,7 +43,7 @@ export default function Webhooks() {
   };
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
           <Webhook size={28} />

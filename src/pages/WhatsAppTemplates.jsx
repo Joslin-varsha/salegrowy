@@ -144,7 +144,7 @@ export default function WhatsAppTemplates() {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -159,8 +159,8 @@ export default function WhatsAppTemplates() {
           >
             Create New Template
           </button>
-          <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>Sync WhatsApp Templates</button>
-          <button style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', gap: '0.35rem', alignItems: 'center' }}>Manage Templates on Meta <ExternalLink size={14} /></button>
+          <button className="btn btn-primary" style={{ padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', width: 'auto' }}>Sync WhatsApp Templates</button>
+          <button className="btn btn-primary" style={{ padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', gap: '0.35rem', alignItems: 'center', width: 'auto' }}>Manage Templates on Meta <ExternalLink size={14} /></button>
         </div>
       </div>
 
@@ -232,7 +232,12 @@ export default function WhatsAppTemplates() {
                     <td style={{ padding: '1rem', fontSize: '0.85rem', color: '#64748b' }}>{tpl.template_id}</td>
                     <td style={{ padding: '0.8rem 1rem' }}>
                       <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-                        <button style={{ backgroundColor: 'var(--wa-green)', color: 'white', border: 'none', borderRadius: '6px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(37, 211, 102, 0.2)', transition: 'transform 0.1s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
+                        <button 
+                          style={{ backgroundColor: 'var(--wa-green)', color: 'white', border: 'none', borderRadius: '6px', padding: '0.4rem 0.8rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(37, 211, 102, 0.2)', transition: 'transform 0.1s' }} 
+                          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'} 
+                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                          onClick={() => navigate('/dashboard/campaigns/create', { state: { selectedTemplate: tpl } })}
+                        >
                           <Megaphone size={14} /> Campaign
                         </button>
                         <button className="icon-action-btn" title="Preview" onClick={() => handlePreview(tpl._id)}>
@@ -247,9 +252,6 @@ export default function WhatsAppTemplates() {
                             <Edit size={16} />
                           </button>
                         )}
-                        <button className="icon-action-btn" title="Update Webhook URL">
-                          <Link2 size={16} />
-                        </button>
                         <button className="icon-action-btn delete" title="Delete" onClick={() => handleDelete(tpl)}>
                           <Trash2 size={16} />
                         </button>

@@ -211,7 +211,7 @@ export default function Contacts() {
   }
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -236,14 +236,14 @@ export default function Contacts() {
             Create New Contact
           </button>
           <button
-            className="btn btn-secondary"
-            style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
+            className="btn btn-primary"
+            style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
           >
             Export Contacts
           </button>
           <button
-            className="btn btn-secondary"
-            style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
+            className="btn btn-primary"
+            style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
           >
             Import Contacts
           </button>
@@ -325,44 +325,44 @@ export default function Contacts() {
         <div style={{ width: '100%' }}>
           <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left' }}>
             <thead style={{ backgroundColor: '#ffffff', boxShadow: '0 1px 0 #e2e8f0' }}>
-              <tr>
-                <th style={{ padding: '0.5rem 0.25rem', width: '30px', textAlign: 'center' }}><span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SEL</span></th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>First Name</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Last Name</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Mobile</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lang</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '100px' }}>Created On</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Groups</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Tags</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Marketing</th>
-                <th style={{ padding: '0.5rem 0.25rem', fontSize: '0.7rem', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action</th>
+              <tr style={{ borderBottom: '2px solid var(--border-color)', backgroundColor: '#ffffff' }}>
+                <th style={{ padding: '1rem 2rem 1rem 1.5rem', width: '80px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>SEL</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>First Name</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Last Name</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Mobile</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Lang</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', minWidth: '100px' }}>Created On</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Groups</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Tags</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Marketing</th>
+                <th style={{ padding: '1rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Action</th>
               </tr>
             </thead>
             <tbody>
               {filteredContacts.map((contact, idx) => (
-                <tr key={idx} className="data-table-row">
-                  <td style={{ padding: '0.35rem 0.25rem', textAlign: 'center' }}><input type="checkbox" checked={selected.includes(idx)} onChange={() => {
+                <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
+                  <td style={{ padding: '1rem 2rem 1rem 1.5rem', textAlign: 'left' }}><input type="checkbox" checked={selected.includes(idx)} onChange={() => {
                     if (selected.includes(idx)) {
                       setSelected(selected.filter(i => i !== idx));
                     } else {
                       setSelected([...selected, idx]);
                     }
                   }} style={{ cursor: 'pointer', margin: 0 }} /></td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>{contact.first_name || contact.first_Name}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#1e293b', fontWeight: 500 }}>{contact.last_name || contact.last_Name}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap' }}>{contact.phone_number}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>{contact.language_code}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.65rem', color: '#64748b', whiteSpace: 'nowrap' }}>{new Date(contact.created_at).toLocaleString()}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{contact.first_name || contact.first_Name}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{contact.last_name || contact.last_Name}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{contact.phone_number}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{contact.language_code}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{new Date(contact.created_at).toLocaleString()}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     {Array.isArray(contact.groups)
                       ? contact.groups.map(g => typeof g === 'object' ? g.title : g).join(', ')
                       : (contact.groups || '')}
                   </td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>{contact.tags}</td>
-                  <td style={{ padding: '0.35rem 0.25rem', fontSize: '0.7rem', color: '#64748b' }}>
-                    <span style={{ backgroundColor: contact.marketing === 'Opted In' ? 'rgba(37, 211, 102, 0.1)' : '#f1f5f9', color: contact.marketing === 'Opted In' ? 'var(--wa-green)' : '#64748b', padding: '0.15rem 0.4rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600 }}>{contact.whatsapp_opt_out_text}</span>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{contact.tags}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <span style={{ backgroundColor: contact.marketing === 'Opted In' ? 'rgba(37, 211, 102, 0.1)' : '#f1f5f9', color: contact.marketing === 'Opted In' ? 'var(--wa-green)' : '#64748b', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>{contact.whatsapp_opt_out_text || (contact.marketing === 'Opted In' ? 'Opted In' : 'Opted Out')}</span>
                   </td>
-                  <td style={{ padding: '0.35rem 0.25rem', position: 'relative' }}>
+                  <td style={{ padding: '1rem', position: 'relative' }}>
                     <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', color: '#64748b' }} onClick={() => setActionMenuOpen(actionMenuOpen === idx ? null : idx)}>
                       <MoreVertical size={16} />
                     </button>
@@ -373,12 +373,6 @@ export default function Contacts() {
                         </button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#1e293b' }} onClick={() => setActionMenuOpen(null)} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                           <Edit size={14} /> Edit
-                        </button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#22c55e' }} onClick={() => setActionMenuOpen(null)} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                          <MessageSquare size={14} /> Send Template Message
-                        </button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#22c55e' }} onClick={() => setActionMenuOpen(null)} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                          <MessageCircle size={14} /> Chat
                         </button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#f43f5e', borderTop: '1px solid #f1f5f9' }} onClick={() => { deleteSelected(idx); setActionMenuOpen(null); }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8d7da'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                           <Trash2 size={14} /> Delete

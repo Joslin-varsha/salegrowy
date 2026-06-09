@@ -25,13 +25,19 @@ export default function Campaigns() {
     const fetchCampaigns = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campaign/list`, {
-          method: 'POST', // Assuming POST because of your { "page": 1 } payload body in MessageLog, adjust if GET
+        const payload = { 
+          page: currentPage, 
+          limit: entriesCount, 
+          status: activeTab === 'Archive' ? 'archived' : 'active' 
+        };
+        const endpoint = activeTab === 'Archive' ? '/api/campaign/list/archived' : '/api/campaign/list';
+        const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ page: currentPage, limit: entriesCount })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,9 +46,7 @@ export default function Campaigns() {
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
           if (result.success && result.data) {
-            // Adding a local archived flag for UI toggling
-            const loaded = result.data.map(c => ({ ...c, archived: false }));
-            setCampaigns(loaded);
+            setCampaigns(result.data);
             if (result.pagination) {
               setTotalRecords(result.pagination.total || result.recordsTotal || 0);
               setTotalPages(result.pagination.total_pages || 1);
@@ -50,7 +54,7 @@ export default function Campaigns() {
               setTotalRecords(result.recordsTotal);
               setTotalPages(Math.ceil(result.recordsTotal / entriesCount));
             } else {
-              setTotalRecords(loaded.length);
+              setTotalRecords(result.data.length);
               setTotalPages(1);
             }
           } else {
@@ -69,12 +73,20 @@ export default function Campaigns() {
       }
     };
     fetchCampaigns();
-  }, [currentPage, entriesCount]);
+  }, [currentPage, entriesCount, activeTab]);
 
-  const handleArchive = (index) => {
+  const handleArchive = (id) => {
+    const action = activeTab === 'Archive' ? 'unarchive' : 'archive';
+    if (!window.confirm(`Do you want to ${action} this campaign?`)) return;
     const updated = [...campaigns];
-    updated[index].archived = true;
-    setCampaigns(updated);
+    const index = updated.findIndex(c => (c._id || c.id) === id);
+    if (index !== -1) {
+      const newStatus = activeTab === 'Archive' ? 'active' : 'archived';
+      if (updated[index].campaign_status !== undefined) updated[index].campaign_status = newStatus;
+      else if (updated[index].status !== undefined) updated[index].status = newStatus;
+      else updated[index].status = newStatus;
+      setCampaigns(updated);
+    }
   };
 
   const handleView = async (id) => {
@@ -132,7 +144,7 @@ export default function Campaigns() {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ width: '100%' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -240,7 +252,6 @@ export default function Campaigns() {
                 <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No campaigns found.</td></tr>
               ) : (
                 filteredCampaigns
-                  .filter(c => activeTab === 'Active' ? !c.archived : c.archived)
                   .map((camp, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
                       <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{camp.title}</td>
@@ -252,8 +263,8 @@ export default function Campaigns() {
                       <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--wa-blue)' }}>
                         📅 {camp.scheduled_at ? new Date(camp.scheduled_at).toLocaleString() : camp.scheduleAt}
                       </td>
-                      <td style={{ padding: '1rem' }}>
-                        <span style={{ backgroundColor: '#f97316', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase' }}>
+                      <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontWeight: 600, textTransform: 'uppercase' }}>
                           {camp.campaign_status || camp.status}
                         </span>
                       </td>
@@ -266,11 +277,11 @@ export default function Campaigns() {
                           }}>
                             <Info size={12} /> Dashboard
                           </button>
-                          <button onClick={() => handleArchive(idx)} style={{
-                            backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px',
+                          <button onClick={() => handleArchive(camp._id || camp.id)} style={{
+                            backgroundColor: activeTab === 'Archive' ? '#f59e0b' : '#ef4444', color: 'white', border: 'none', borderRadius: '4px',
                             padding: '0.4rem 0.6rem', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer'
                           }}>
-                            Archive
+                            {activeTab === 'Archive' ? 'Unarchive' : 'Archive'}
                           </button>
                         </div>
                       </td>

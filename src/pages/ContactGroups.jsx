@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect } from 'react';
-import { Users, Edit, Trash2, Archive, Check } from 'lucide-react';
+import { Users, Edit, Trash2, Archive, Check, MoreVertical } from 'lucide-react';
 
 
 
@@ -20,6 +20,7 @@ export default function ContactGroups() {
   const [searchTerm, setSearchTerm] = useState(''); // Added search state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [actionMenuOpen, setActionMenuOpen] = useState(null);
 
 
   const deleteBulk = async () => {
@@ -51,7 +52,8 @@ export default function ContactGroups() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
+      const endpoint = activeTab === 'archive' ? '/api/contact/groups/archived' : '/api/contact/groups';
+      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -88,7 +90,7 @@ export default function ContactGroups() {
 
   useEffect(() => {
     fetchGroups();
-  }, [currentPage, entriesCount]);
+  }, [currentPage, entriesCount, activeTab]);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -175,7 +177,7 @@ export default function ContactGroups() {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', fontFamily: 'inherit' }}>
+    <div style={{ width: '100%', fontFamily: 'inherit' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -299,7 +301,7 @@ export default function ContactGroups() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e2e8f0', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <th style={{ padding: '1rem 0.75rem', width: '80px' }}>Select</th>
+                <th style={{ padding: '1rem 2rem 1rem 1rem', width: '80px' }}>Select</th>
                 <th style={{ padding: '1rem 0.75rem' }}>Title</th>
                 <th style={{ padding: '1rem 0.75rem' }}>Description</th>
                 <th style={{ padding: '1rem 0.75rem' }}>Action</th>
@@ -316,15 +318,14 @@ export default function ContactGroups() {
                 </tr>
               ) : (
                 groups.map((group, idx) => {
-                  const isTabMatch = activeTab === 'archive' ? !!group.isArchived : !group.isArchived;
                   const isSearchMatch = group.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     (group.description && group.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-                  if (!isTabMatch || !isSearchMatch) return null;
+                  if (!isSearchMatch) return null;
 
                   return (
                     <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f8fafc', borderBottom: '1px solid transparent' }}>
-                      <td style={{ padding: '0.85rem 0.75rem' }}>
+                      <td style={{ padding: '0.85rem 2rem 0.85rem 1rem' }}>
                         <input
                           type="checkbox"
                           checked={selected.includes(idx)}
@@ -338,37 +339,18 @@ export default function ContactGroups() {
                       <td style={{ padding: '0.85rem 0.75rem', fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>{group.title}</td>
                       <td style={{ padding: '0.85rem 0.75rem', fontSize: '0.85rem', color: '#94a3b8' }}>{group.description || ''}</td>
                       <td style={{ padding: '0.85rem 0.75rem' }}>
-                        <div style={{ display: 'flex', gap: '0.35rem' }}>
-                          <button style={{ backgroundColor: '#ff5c45', color: 'white', border: 'none', borderRadius: '3px', padding: '0.35rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
-                            <Users size={12} strokeWidth={2.5} /> Group Contacts
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                          <button style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#334155'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                            <Users size={14} strokeWidth={2} /> Contacts
                           </button>
-                          <button
-                            onClick={() => {
-                              setEditingGroup(group);
-                              setShowEditModal(true);
-                            }}
-                            style={{ backgroundColor: '#1e293b', color: 'white', border: 'none', borderRadius: '3px', padding: '0.35rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                          >
-                            <Edit size={12} strokeWidth={2.5} /> Edit
+                          <button onClick={() => { setEditingGroup(group); setShowEditModal(true); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                            <Edit size={14} strokeWidth={2} /> Edit
                           </button>
-                          <button
-                            onClick={() => {
-                              if (window.confirm("Delete this group?")) {
-                                setGroups(groups.filter((_, i) => i !== idx));
-                              }
-                            }}
-                            style={{ backgroundColor: '#ff2d55', color: 'white', border: 'none', borderRadius: '3px', padding: '0.35rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                          >
-                            <Trash2 size={12} strokeWidth={2.5} /> Delete
+                          <button onClick={() => { const updated = groups.map((g, i) => i === idx ? { ...g, isArchived: !g.isArchived } : g); setGroups(updated); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                            <Archive size={14} strokeWidth={2} /> {activeTab === 'archive' ? 'Unarchive' : 'Archive'}
                           </button>
-                          <button
-                            onClick={() => {
-                              const updated = groups.map((g, i) => i === idx ? { ...g, isArchived: !g.isArchived } : g);
-                              setGroups(updated);
-                            }}
-                            style={{ backgroundColor: '#94a3b8', color: 'white', border: 'none', borderRadius: '3px', padding: '0.35rem 0.5rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}
-                          >
-                            {group.isArchived ? 'Unarchive' : 'Archive'}
+                          <button onClick={() => { if (window.confirm("Delete this group?")) setGroups(groups.filter((_, i) => i !== idx)); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                            <Trash2 size={14} strokeWidth={2} /> Delete
                           </button>
                         </div>
                       </td>

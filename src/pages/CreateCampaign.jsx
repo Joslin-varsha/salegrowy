@@ -1,13 +1,14 @@
 import { API_BASE_URL } from '../config';
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, RefreshCw, List, ExternalLink, Image as ImageIcon } from 'lucide-react';
 
 
 
 export default function CreateCampaign() {
   const navigate = useNavigate();
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const location = useLocation();
+  const [selectedTemplate, setSelectedTemplate] = useState(location.state?.selectedTemplate || null);
   const [open, setOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const fileInputRef = useRef(null);
@@ -57,6 +58,43 @@ export default function CreateCampaign() {
       }
     };
     fetchTemplates();
+  }, []);
+
+  useEffect(() => {
+    const fetchSelectedTemplateDetails = async () => {
+      const passedTpl = location.state?.selectedTemplate;
+      if (!passedTpl) return;
+
+      const templateId = passedTpl._id || passedTpl.template_id || passedTpl.id;
+      if (!templateId) return;
+
+      try {
+        setSelectedTemplateLoading(true);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/view/${templateId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) return;
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const result = await response.json();
+          const templateObject = result?.data?.__data?.template || result?.data?.template;
+          if (templateObject) {
+            setSelectedTemplate(templateObject);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching template details on init:", err);
+      } finally {
+        setSelectedTemplateLoading(false);
+      }
+    };
+
+    // We only want to do this once on mount if state was passed
+    if (location.state?.selectedTemplate) {
+      fetchSelectedTemplateDetails();
+    }
   }, []);
 
   const handleCreateCampaign = async () => {
