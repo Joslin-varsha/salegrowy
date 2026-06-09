@@ -10,7 +10,7 @@ export default function SyncProducts() {
   const [shopifyProducts, setShopifyProducts] = useState([]);
   const [syncedProducts, setSyncedProducts] = useState([]);
   const [syncedPage, setSyncedPage] = useState(1);
-  const [syncedPageSize, setSyncedPageSize] = useState(50);
+  const [syncedPageSize, setSyncedPageSize] = useState(10);
   const [syncedTotal, setSyncedTotal] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -22,7 +22,7 @@ export default function SyncProducts() {
 
   // Fetch initial products on mount
   useEffect(() => {
-    fetchShopifyProducts(1, 50, '');
+    fetchShopifyProducts(1, 10, '');
   }, []);
 
   const handleSyncProducts = async () => {
@@ -97,7 +97,7 @@ export default function SyncProducts() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
-          Sync Products
+          Products
         </h1>
         <div style={{ display: 'flex', gap: '0.75rem', marginRight: '10px' }}>
           <button
@@ -124,6 +124,7 @@ export default function SyncProducts() {
               value={syncedPageSize} 
               onChange={(e) => fetchShopifyProducts(1, Number(e.target.value), searchQuery)}
             >
+              <option value={10}>10</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
               <option value={100}>100</option>

@@ -118,18 +118,18 @@ export default function VendorDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {[
               { text: 'Login to your Facebook Account', linkText: '' },
-              { text: 'Complete Setup as Shown in', linkText: 'WhatsApp Cloud API Setup' },
-              { text: 'Manage and Sync WhatsApp templates at', linkText: 'Manage WhatsApp Templates' },
-              { text: 'Create your contact groups using', linkText: 'Manage Groups' },
-              { text: 'Create your Contacts or Upload excel file with predefined exportable template at', linkText: 'Manage Contacts' },
-              { text: 'Create & Schedule your Campaigns at', linkText: 'Manage Campaigns' },
+              { text: 'Complete Setup as Shown in', linkText: 'WhatsApp Cloud API Setup', linkPath: '/dashboard/settings' },
+              { text: 'Manage and Sync WhatsApp templates at', linkText: 'Manage WhatsApp Templates', linkPath: '/dashboard/whatsapp-templates' },
+              { text: 'Create your contact groups using', linkText: 'Manage Groups', linkPath: '/dashboard/contacts/groups' },
+              { text: 'Create your Contacts or Upload excel file with predefined exportable template at', linkText: 'Manage Contacts', linkPath: '/dashboard/contacts' },
+              { text: 'Create & Schedule your Campaigns at', linkText: 'Manage Campaigns', linkPath: '/dashboard/campaigns' },
             ].map((step, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: 'var(--input-bg)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 600, flexShrink: 0, marginTop: '2px' }}>
                   {idx + 1}
                 </div>
                 <div style={{ fontSize: '0.95rem', color: '#475569' }}>
-                  {step.text} {step.linkText && <Link to="#" style={{ color: 'var(--wa-green)', fontWeight: 600 }}>{step.linkText}</Link>}
+                  {step.text} {step.linkText && <Link to={step.linkPath || "#"} style={{ color: 'var(--wa-green)', fontWeight: 600 }}>{step.linkText}</Link>}
                 </div>
               </div>
             ))}

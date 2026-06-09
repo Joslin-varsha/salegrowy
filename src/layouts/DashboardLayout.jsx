@@ -42,17 +42,13 @@ const Sidebar = () => {
     },
     // { icon: Waypoints, text: 'Flow Messages', hasSubmenu: true, path: '#' },
     { icon: Layers, text: 'Templates', path: '/dashboard/whatsapp-templates' },
-    {
-      icon: Bot, text: 'Bot Replies', hasSubmenu: true, path: '/dashboard/bot', submenu: [
-        { text: 'Flows', path: '/dashboard/bot/flows' }
-      ]
-    },
+    { icon: Bot, text: 'Bot Flows', path: '/dashboard/bot/flows' },
     { icon: Sparkles, text: 'AI Agent', path: '/dashboard/agent' },
     { icon: User, text: 'Subscription Plans', path: '/dashboard/subscription' },
-    { icon: SyncOutlined, text: 'Sync Products', path: '/dashboard/sync-products' },
-    { icon: SyncOutlined, text: 'Sync Customers', path: '/dashboard/sync-customers' },
+    { icon: SyncOutlined, text: 'Products', path: '/dashboard/sync-products' },
+    // { icon: SyncOutlined, text: 'Sync Customers', path: '/dashboard/sync-customers' },
     { icon: Webhook, text: 'Webhooks', path: '/dashboard/webhooks' },
-    { icon: SettingsIcon, text: 'Settings', path: '/dashboard/settings' },
+    { icon: SettingsIcon, text: 'WhatsApp API Setup', path: '/dashboard/settings' },
    
   ];
 
@@ -261,10 +257,7 @@ const Topbar = ({ isLargeScreen }) => {
 
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-        <div style={{ position: 'relative', cursor: 'pointer' }}>
-          <Bell size={18} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%', border: '2px solid var(--wa-green)' }}></div>
-        </div>
+
         <div ref={menuRef} style={{ position: 'relative' }}>
           <div onClick={() => setShowProfileMenu(!showProfileMenu)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', borderLeft: '1px solid rgba(255,255,255,0.2)', paddingLeft: '1.5rem' }}>
             <div style={{ textAlign: 'right' }}>

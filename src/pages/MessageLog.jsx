@@ -6,7 +6,9 @@ import { History, ChevronDown, Download, Search, Info } from 'lucide-react';
 
 export default function MessageLog() {
   const [entriesCount, setEntriesCount] = useState(10);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -31,7 +33,7 @@ export default function MessageLog() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ page: 1, limit: entriesCount })
+          body: JSON.stringify({ page: currentPage, limit: entriesCount })
         });
 
         if (!response.ok) {
@@ -43,8 +45,20 @@ export default function MessageLog() {
           const result = await response.json();
           if (result.success && result.data) {
             setLogs(result.data);
+            if (result.pagination) {
+              setTotalRecords(result.pagination.total || result.recordsTotal || 0);
+              setTotalPages(result.pagination.total_pages || 1);
+            } else if (result.recordsTotal !== undefined) {
+              setTotalRecords(result.recordsTotal);
+              setTotalPages(Math.ceil(result.recordsTotal / entriesCount));
+            } else {
+              setTotalRecords(result.data.length);
+              setTotalPages(1);
+            }
           } else {
             setLogs([]);
+            setTotalRecords(0);
+            setTotalPages(1);
           }
         } else {
           throw new Error("Expected JSON response but got something else");
@@ -52,12 +66,14 @@ export default function MessageLog() {
       } catch (err) {
         console.error("Error fetching logs:", err);
         setLogs([]);
+        setTotalRecords(0);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
     fetchLogs();
-  }, [entriesCount]);
+  }, [currentPage, entriesCount]);
 
   const handleView = async (id) => {
     if (!id) return;
@@ -97,6 +113,10 @@ export default function MessageLog() {
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters, entriesCount]);
+
   const filteredLogs = logs.filter(log => {
     // Search filter
     const matchesSearch =
@@ -120,6 +140,22 @@ export default function MessageLog() {
 
     return matchesSearch && matchesType && matchesStatus && matchesStart && matchesEnd;
   });
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, '...', totalPages);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(1, '...', totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -233,7 +269,7 @@ export default function MessageLog() {
                 <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>Loading message logs...</td></tr>
               ) : filteredLogs.length === 0 ? (
                 <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center' }}>No logs found.</td></tr>
-              ) : filteredLogs.slice(0, entriesCount).map((log, idx) => (
+              ) : filteredLogs.map((log, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                     {log.recipient || log.contact_id || log.to || log.phone_number}
@@ -263,6 +299,50 @@ export default function MessageLog() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Showing {totalRecords === 0 ? 0 : (currentPage - 1) * entriesCount + 1} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: 600, border: '1px solid var(--border-color)', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#94a3b8' : 'var(--text-primary)', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Prev
+            </button>
+            {getPageNumbers().map((pageNum, idx) => (
+              <button
+                key={idx}
+                disabled={pageNum === '...'}
+                onClick={() => pageNum !== '...' && setCurrentPage(pageNum)}
+                style={{
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderColor: currentPage === pageNum ? 'var(--wa-green)' : 'var(--border-color)',
+                  backgroundColor: currentPage === pageNum ? 'var(--wa-green)' : '#ffffff',
+                  color: currentPage === pageNum ? '#ffffff' : 'var(--text-primary)',
+                  borderRadius: '4px',
+                  cursor: pageNum === '...' ? 'default' : 'pointer',
+                  minWidth: '32px'
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              disabled={currentPage >= totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: 600, border: '1px solid var(--border-color)', backgroundColor: currentPage >= totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage >= totalPages || totalPages === 0 ? '#94a3b8' : 'var(--text-primary)', borderRadius: '4px', cursor: currentPage >= totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
       </div>

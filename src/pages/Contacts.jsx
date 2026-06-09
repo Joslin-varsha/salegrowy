@@ -2,13 +2,17 @@ import { API_BASE_URL } from '../config';
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Download, Upload, CheckSquare, Trash2, Info, Edit, MessageSquare, MessageCircle, MoreVertical } from 'lucide-react';
-
+import { Plus, Download, Upload, CheckSquare, Trash2, Info, Edit, MessageSquare, MessageCircle, MoreVertical, RefreshCw } from 'lucide-react';
+import { message } from 'antd';
+import { decryptData } from "../utils/encryption";
 
 
 export default function Contacts() {
   const navigate = useNavigate();
-  const [entriesCount, setEntriesCount] = useState(100);
+  const [entriesCount, setEntriesCount] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
 
   const [contacts, setContacts] = useState([]);
@@ -22,58 +26,111 @@ export default function Contacts() {
   const [viewContactDetails, setViewContactDetails] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
   const [actionMenuOpen, setActionMenuOpen] = useState(null);
+  const [syncLoading, setSyncLoading] = useState(false);
 
+  const fetchContacts = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/list`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ page: currentPage, limit: entriesCount })
+      });
 
-  useEffect(() => {
-    const fetchContacts = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/list`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+      if (!response.ok) {
+        throw new Error("API error");
+      }
 
-        if (!response.ok) {
-          throw new Error("API error");
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const result = await response.json();
-          if (result.success) {
-            setContacts(result.data);
-          } else {
-            setContacts([]);
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const result = await response.json();
+        if (result.success) {
+          setContacts(result.data);
+          if (result.pagination) {
+            setTotalRecords(result.pagination.total || 0);
+            setTotalPages(result.pagination.total_pages || 1);
+          } else if (result.recordsTotal !== undefined) {
+            setTotalRecords(result.recordsTotal);
+            setTotalPages(Math.ceil(result.recordsTotal / entriesCount) || 1);
           }
         } else {
-          throw new Error("Expected JSON response but got something else");
+          setContacts([]);
         }
-
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+      } else {
+        throw new Error("Expected JSON response but got something else");
       }
-    };
 
-    const fetchGroups = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (!response.ok) return;
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const result = await response.json();
-          if (result?.success) setGroups(result.data);
-        }
-      } catch (err) { console.error("Error fetching contact groups", err); }
-    };
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) return;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const result = await response.json();
+        if (result?.success) setGroups(result.data);
+      }
+    } catch (err) { console.error("Error fetching contact groups", err); }
+  };
+
+  useEffect(() => {
     fetchContacts();
     fetchGroups();
-  }, []);
+  }, [currentPage, entriesCount]);
+
+  const handleSyncCustomers = async () => {
+    try {
+      setSyncLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/vendor/sync-customers`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      const data = await response.json();
+      const decrypted = decryptData(data?.payload);
+      if (decrypted) {
+        message.success(
+          decrypted.message ||
+          'Customer sync job successfully queued'
+        );
+      }
+      await fetchContacts();
+    } catch (error) {
+      console.error('Sync customers error:', error);
+      message.error('Failed to sync customers');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, '...', totalPages);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(1, '...', totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const deleteSelected = (index) => {
     const updated = contacts.filter((_, i) => i !== index);
@@ -161,7 +218,16 @@ export default function Contacts() {
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
           Contacts
         </h1>
-        <div style={{ display: 'flex', gap: '0.75rem', marginRight: '100px' }}>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            className="btn btn-primary"
+            style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            onClick={handleSyncCustomers}
+            disabled={syncLoading}
+          >
+            <RefreshCw size={14} className={syncLoading ? "animate-spin" : ""} />
+            {syncLoading ? 'Syncing...' : 'Sync All Customers'}
+          </button>
           <button
             className="btn btn-primary"
             style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
@@ -236,7 +302,8 @@ export default function Contacts() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
             Show
-            <select style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#334155', appearance: 'auto', backgroundColor: '#fff' }} value={entriesCount} onChange={(e) => setEntriesCount(Number(e.target.value))}>
+            <select style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#334155', appearance: 'auto', backgroundColor: '#fff' }} value={entriesCount} onChange={(e) => { setEntriesCount(Number(e.target.value)); setCurrentPage(1); }}>
+              <option value={10}>10</option>
               <option value={50}>50</option>
               <option value={100}>100</option>
             </select>
@@ -272,7 +339,7 @@ export default function Contacts() {
               </tr>
             </thead>
             <tbody>
-              {filteredContacts.slice(0, entriesCount).map((contact, idx) => (
+              {filteredContacts.map((contact, idx) => (
                 <tr key={idx} className="data-table-row">
                   <td style={{ padding: '0.35rem 0.25rem', textAlign: 'center' }}><input type="checkbox" checked={selected.includes(idx)} onChange={() => {
                     if (selected.includes(idx)) {
@@ -323,6 +390,50 @@ export default function Contacts() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination UI */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', padding: '0 1.5rem 1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Showing {contacts.length > 0 ? (currentPage - 1) * entriesCount + 1 : 0} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '0.35rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : 'white', color: currentPage === 1 ? '#94a3b8' : '#334155', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Prev
+            </button>
+            
+            {getPageNumbers().map((num, idx) => (
+              <button
+                key={idx}
+                onClick={() => typeof num === 'number' && setCurrentPage(num)}
+                disabled={num === '...'}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  border: num === '...' ? 'none' : '1px solid #e2e8f0',
+                  backgroundColor: currentPage === num ? 'var(--wa-green)' : 'white',
+                  color: currentPage === num ? 'white' : '#334155',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: currentPage === num ? 600 : 500,
+                  cursor: num === '...' ? 'default' : 'pointer'
+                }}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              style={{ padding: '0.35rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : 'white', color: currentPage === totalPages || totalPages === 0 ? '#94a3b8' : '#334155', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
       </div>

@@ -5,6 +5,10 @@ import { Tag, Edit, Trash2 } from 'lucide-react';
 
 
 export default function Labels() {
+  const [entriesCount, setEntriesCount] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [labels, setLabels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -20,7 +24,12 @@ export default function Labels() {
   const fetchLabels = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ page: currentPage, limit: entriesCount })
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const contentType = response.headers.get("content-type");
@@ -28,6 +37,13 @@ export default function Labels() {
         const result = await response.json();
         if (result?.success) {
           setLabels(result.data);
+          if (result.pagination) {
+            setTotalRecords(result.pagination.total || 0);
+            setTotalPages(result.pagination.total_pages || 1);
+          } else if (result.recordsTotal !== undefined) {
+            setTotalRecords(result.recordsTotal);
+            setTotalPages(Math.ceil(result.recordsTotal / entriesCount) || 1);
+          }
         } else {
           setLabels([]);
         }
@@ -44,7 +60,23 @@ export default function Labels() {
 
   useEffect(() => {
     fetchLabels();
-  }, []);
+  }, [currentPage, entriesCount]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, '...', totalPages);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(1, '...', totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const handleCreateLabel = async () => {
     if (!newLabel.title) return;
@@ -171,6 +203,15 @@ export default function Labels() {
                 </div>
               )}
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '1rem', color: '#64748b', fontSize: '0.85rem' }}>
+              Show
+              <select value={entriesCount} onChange={(e) => { setEntriesCount(Number(e.target.value)); setCurrentPage(1); }} style={{ border: '1px solid #cbd5e1', borderRadius: '4px', padding: '0.25rem 0.5rem', color: '#334155', appearance: 'auto', backgroundColor: '#fff' }}>
+                <option value={10}>10</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              entries
+            </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>
@@ -258,6 +299,51 @@ export default function Labels() {
             </tbody>
           </table>
         </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', color: '#94a3b8', fontSize: '0.85rem' }}>
+          <div>
+            Showing {labels.length > 0 ? (currentPage - 1) * entriesCount + 1 : 0} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '0.4rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : 'white', color: currentPage === 1 ? '#94a3b8' : '#334155', borderRadius: '2px', fontSize: '0.75rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Prev
+            </button>
+            
+            {getPageNumbers().map((num, idx) => (
+              <button
+                key={idx}
+                onClick={() => typeof num === 'number' && setCurrentPage(num)}
+                disabled={num === '...'}
+                style={{
+                  padding: '0.4rem 0.75rem',
+                  border: num === '...' ? 'none' : '1px solid #e2e8f0',
+                  backgroundColor: currentPage === num ? '#31C653' : 'white',
+                  color: currentPage === num ? 'white' : '#334155',
+                  borderRadius: '2px',
+                  fontSize: '0.75rem',
+                  fontWeight: currentPage === num ? 600 : 500,
+                  cursor: num === '...' ? 'default' : 'pointer'
+                }}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              style={{ padding: '0.4rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : 'white', color: currentPage === totalPages || totalPages === 0 ? '#94a3b8' : '#334155', borderRadius: '2px', fontSize: '0.75rem', cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* Add/Edit Modal */}

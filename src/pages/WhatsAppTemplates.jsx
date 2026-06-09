@@ -7,7 +7,10 @@ import { Megaphone, Eye, Edit, Link2, Trash2, CheckCircle2, ExternalLink, X } fr
 
 export default function WhatsAppTemplates() {
   const navigate = useNavigate();
-  const [entriesCount, setEntriesCount] = useState(100);
+  const [entriesCount, setEntriesCount] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   const [templatesData, setTemplatesData] = useState([]);
@@ -28,7 +31,11 @@ export default function WhatsAppTemplates() {
         setLoading(true);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { 
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ page: currentPage, limit: entriesCount })
         });
 
         if (!response.ok) {
@@ -40,6 +47,13 @@ export default function WhatsAppTemplates() {
           const result = await response.json();
           if (result?.success) {
             setTemplatesData(result.data);
+            if (result.pagination) {
+              setTotalRecords(result.pagination.total || 0);
+              setTotalPages(result.pagination.total_pages || 1);
+            } else if (result.recordsTotal !== undefined) {
+              setTotalRecords(result.recordsTotal);
+              setTotalPages(Math.ceil(result.recordsTotal / entriesCount) || 1);
+            }
           } else {
             setTemplatesData([]);
           }
@@ -54,7 +68,23 @@ export default function WhatsAppTemplates() {
       }
     };
     fetchTemplates();
-  }, []);
+  }, [currentPage, entriesCount]);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, '...', totalPages);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(1, '...', totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const handlePreview = async (id) => {
     setPreviewLoading(true);
@@ -86,6 +116,30 @@ export default function WhatsAppTemplates() {
       setSelectedTemplate(null);
     } finally {
       setPreviewLoading(false);
+    }
+  };
+
+  const handleDelete = async (tpl) => {
+    if (!window.confirm(`Are you sure you want to delete the template "${tpl.template_name}"?`)) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/delete`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ templateIdOrUid: tpl._uid || tpl._id })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setTemplatesData(prev => prev.filter(t => t._id !== tpl._id));
+      } else {
+        alert(result.message || "Failed to delete template");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error deleting template");
     }
   };
 
@@ -162,7 +216,7 @@ export default function WhatsAppTemplates() {
                 <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>Loading templates...</td></tr>
               ) : filteredTemplates.length === 0 ? (
                 <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center' }}>No templates found.</td></tr>
-              ) : filteredTemplates.slice(0, entriesCount).map((tpl, idx) => {
+              ) : filteredTemplates.map((tpl, idx) => {
                 return (
                   <tr key={idx} className="data-table-row">
                     <td style={{ padding: '1rem', fontSize: '0.9rem', color: '#1e293b', fontWeight: 500 }}>{tpl.template_name}</td>
@@ -184,13 +238,19 @@ export default function WhatsAppTemplates() {
                         <button className="icon-action-btn" title="Preview" onClick={() => handlePreview(tpl._id)}>
                           <Eye size={16} />
                         </button>
-                        <button className="icon-action-btn" title="Edit">
-                          <Edit size={16} />
-                        </button>
+                        {tpl.status !== 'PENDING' && tpl.status !== 'IN_APPEAL' ? (
+                          <button className="icon-action-btn" title="Edit" onClick={() => navigate('/dashboard/whatsapp-templates/create', { state: { editTemplateId: tpl._id } })}>
+                            <Edit size={16} />
+                          </button>
+                        ) : (
+                          <button className="icon-action-btn" title="Template under review (Cannot edit)" style={{ opacity: 0.3, cursor: 'not-allowed' }}>
+                            <Edit size={16} />
+                          </button>
+                        )}
                         <button className="icon-action-btn" title="Update Webhook URL">
                           <Link2 size={16} />
                         </button>
-                        <button className="icon-action-btn delete" title="Delete">
+                        <button className="icon-action-btn delete" title="Delete" onClick={() => handleDelete(tpl)}>
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -200,6 +260,50 @@ export default function WhatsAppTemplates() {
               })}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination UI */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Showing {templatesData.length > 0 ? (currentPage - 1) * entriesCount + 1 : 0} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '0.35rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : 'white', color: currentPage === 1 ? '#94a3b8' : '#334155', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Prev
+            </button>
+            
+            {getPageNumbers().map((num, idx) => (
+              <button
+                key={idx}
+                onClick={() => typeof num === 'number' && setCurrentPage(num)}
+                disabled={num === '...'}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  border: num === '...' ? 'none' : '1px solid #e2e8f0',
+                  backgroundColor: currentPage === num ? 'var(--wa-green)' : 'white',
+                  color: currentPage === num ? 'white' : '#334155',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  fontWeight: currentPage === num ? 600 : 500,
+                  cursor: num === '...' ? 'default' : 'pointer'
+                }}
+              >
+                {num}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              style={{ padding: '0.35rem 0.75rem', border: '1px solid #e2e8f0', backgroundColor: currentPage === totalPages || totalPages === 0 ? '#f8fafc' : 'white', color: currentPage === totalPages || totalPages === 0 ? '#94a3b8' : '#334155', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 500, cursor: currentPage === totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
       </div>

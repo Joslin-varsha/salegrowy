@@ -8,7 +8,10 @@ import { LayoutDashboard, Archive, Info } from 'lucide-react';
 export default function Campaigns() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Active');
-  const [entriesCount, setEntriesCount] = useState(100);
+  const [entriesCount, setEntriesCount] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +31,7 @@ export default function Campaigns() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
           },
-          body: JSON.stringify({ page: 1, limit: entriesCount })
+          body: JSON.stringify({ page: currentPage, limit: entriesCount })
         });
 
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -40,18 +43,33 @@ export default function Campaigns() {
             // Adding a local archived flag for UI toggling
             const loaded = result.data.map(c => ({ ...c, archived: false }));
             setCampaigns(loaded);
+            if (result.pagination) {
+              setTotalRecords(result.pagination.total || result.recordsTotal || 0);
+              setTotalPages(result.pagination.total_pages || 1);
+            } else if (result.recordsTotal !== undefined) {
+              setTotalRecords(result.recordsTotal);
+              setTotalPages(Math.ceil(result.recordsTotal / entriesCount));
+            } else {
+              setTotalRecords(loaded.length);
+              setTotalPages(1);
+            }
           } else {
             setCampaigns([]);
+            setTotalRecords(0);
+            setTotalPages(1);
           }
         }
       } catch (err) {
         console.error("Error fetching campaigns:", err);
+        setCampaigns([]);
+        setTotalRecords(0);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
     fetchCampaigns();
-  }, [entriesCount]);
+  }, [currentPage, entriesCount]);
 
   const handleArchive = (index) => {
     const updated = [...campaigns];
@@ -96,6 +114,22 @@ export default function Campaigns() {
     (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     (c.template_name || c.template || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 3) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 2) {
+        pages.push(1, 2, '...', totalPages);
+      } else if (currentPage >= totalPages - 1) {
+        pages.push(1, '...', totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -207,7 +241,6 @@ export default function Campaigns() {
               ) : (
                 filteredCampaigns
                   .filter(c => activeTab === 'Active' ? !c.archived : c.archived)
-                  .slice(0, entriesCount)
                   .map((camp, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
                       <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{camp.title}</td>
@@ -245,6 +278,50 @@ export default function Campaigns() {
                   )))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            Showing {totalRecords === 0 ? 0 : (currentPage - 1) * entriesCount + 1} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
+          </div>
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: 600, border: '1px solid var(--border-color)', backgroundColor: currentPage === 1 ? '#f8fafc' : '#ffffff', color: currentPage === 1 ? '#94a3b8' : 'var(--text-primary)', borderRadius: '4px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              Prev
+            </button>
+            {getPageNumbers().map((pageNum, idx) => (
+              <button
+                key={idx}
+                disabled={pageNum === '...'}
+                onClick={() => pageNum !== '...' && setCurrentPage(pageNum)}
+                style={{
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  border: '1px solid',
+                  borderColor: currentPage === pageNum ? 'var(--wa-green)' : 'var(--border-color)',
+                  backgroundColor: currentPage === pageNum ? 'var(--wa-green)' : '#ffffff',
+                  color: currentPage === pageNum ? '#ffffff' : 'var(--text-primary)',
+                  borderRadius: '4px',
+                  cursor: pageNum === '...' ? 'default' : 'pointer',
+                  minWidth: '32px'
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              disabled={currentPage >= totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              style={{ padding: '0.35rem 0.6rem', fontSize: '0.75rem', fontWeight: 600, border: '1px solid var(--border-color)', backgroundColor: currentPage >= totalPages || totalPages === 0 ? '#f8fafc' : '#ffffff', color: currentPage >= totalPages || totalPages === 0 ? '#94a3b8' : 'var(--text-primary)', borderRadius: '4px', cursor: currentPage >= totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              Next
+            </button>
+          </div>
         </div>
 
       </div>

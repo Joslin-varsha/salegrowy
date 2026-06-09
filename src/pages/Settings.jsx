@@ -372,7 +372,7 @@ export default function Settings() {
       {/* Header */}
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
-          Settings
+          Whatsapp API Setup
         </h1>
 
       </div>

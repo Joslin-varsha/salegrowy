@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 
 
@@ -28,6 +29,12 @@ import {
 
 export default function CreateWhatsAppTemplate() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editTemplateId = location.state?.editTemplateId;
+  const isEditMode = !!editTemplateId;
+
+  const [editTemplateUid, setEditTemplateUid] = useState(null);
+  const [editMetaTemplateId, setEditMetaTemplateId] = useState(null);
   const fileInputRef = useRef(null);
   const bodyTextRef = useRef(null);
   const [loading, setLoading] = useState(false);
@@ -44,6 +51,90 @@ export default function CreateWhatsAppTemplate() {
     footerText: '',
     buttons: []
   });
+
+  useEffect(() => {
+    if (isEditMode) {
+      const fetchTemplate = async () => {
+        try {
+          setLoading(true);
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/view/${editTemplateId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          });
+          const result = await response.json();
+          if (result.success && result.data) {
+            const tpl = result.data;
+            
+            if (tpl.status === 'PENDING' || tpl.status === 'IN_APPEAL') {
+              alert("This template is currently under review by Meta and cannot be edited. Please wait until it is approved or rejected.");
+              navigate('/dashboard/whatsapp-templates');
+              return;
+            }
+
+            setEditTemplateUid(tpl._uid);
+            setEditMetaTemplateId(tpl.template_id);
+            
+            const newFormData = {
+              name: tpl.template_name || '',
+              language: tpl.language || 'en',
+              category: tpl.category || 'MARKETING',
+              headerType: 'NONE',
+              headerText: '',
+              headerVariableExample: '',
+              headerHandle: '',
+              bodyText: '',
+              bodyExample: null,
+              footerText: '',
+              buttons: []
+            };
+
+            let comps = tpl.__data?.template?.components || tpl.components || [];
+            if (typeof comps === 'string') {
+              try { comps = JSON.parse(comps); } catch(e) { console.error('Failed to parse components string', e); }
+            }
+            
+            if (Array.isArray(comps)) {
+              comps.forEach(c => {
+                const cType = c.type?.toUpperCase();
+                if (cType === 'HEADER') {
+                  newFormData.headerType = c.format?.toUpperCase() || 'TEXT';
+                  if (newFormData.headerType === 'TEXT') {
+                    newFormData.headerText = c.text || '';
+                    newFormData.headerVariableExample = c.example?.header_text?.[0] || '';
+                  } else {
+                    newFormData.headerHandle = c.example?.header_handle?.[0] || '';
+                  }
+                }
+                if (cType === 'BODY') {
+                  newFormData.bodyText = c.text || '';
+                  newFormData.bodyExample = c.example?.body_text?.[0] || null;
+                }
+                if (cType === 'FOOTER') {
+                  newFormData.footerText = c.text || '';
+                }
+                if (cType === 'BUTTONS' && Array.isArray(c.buttons)) {
+                  newFormData.buttons = c.buttons.map(b => ({
+                    type: b.type === 'URL' && b.url?.includes('{{1}}') ? 'DYNAMIC_URL' : (b.type?.toUpperCase() || 'QUICK_REPLY'),
+                    text: b.text || '',
+                    phone: b.phone_number || '',
+                    url: b.url || '',
+                    example: b.example?.[0] || ''
+                  }));
+                }
+              });
+            }
+            setFormData(newFormData);
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Failed to load template data for editing.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchTemplate();
+    }
+  }, [editTemplateId, isEditMode]);
 
 
   const [headerFile, setHeaderFile] = useState(null);
@@ -143,42 +234,65 @@ export default function CreateWhatsAppTemplate() {
           headerComp.example = { header_text: [formData.headerVariableExample] };
         }
       } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(formData.headerType)) {
-        headerComp.example = { header_handle: [""] };
+        if (formData.headerHandle) {
+          headerComp.example = { header_handle: [formData.headerHandle] };
+        }
       }
       components.push(headerComp);
     }
 
-    components.push({ type: 'BODY', text: formData.bodyText });
+    const bodyComp = { type: 'BODY', text: formData.bodyText };
+    const bodyVarsMatch = formData.bodyText.match(/\{\{\d+\}\}/g);
+    if (bodyVarsMatch && bodyVarsMatch.length > 0) {
+      const uniqueVars = [...new Set(bodyVarsMatch)];
+      if (formData.bodyExample && formData.bodyExample.length === uniqueVars.length) {
+        bodyComp.example = { body_text: [formData.bodyExample] };
+      } else {
+        bodyComp.example = { body_text: [uniqueVars.map((_, i) => `Sample ${i+1}`)] };
+      }
+    }
+    components.push(bodyComp);
+    
     if (formData.footerText) components.push({ type: 'FOOTER', text: formData.footerText });
 
     if (formData.buttons.length > 0) {
       components.push({
         type: 'BUTTONS',
         buttons: formData.buttons.map(btn => {
-          const b = { type: btn.type === 'DYNAMIC_URL' ? 'URL' : btn.type, text: btn.text };
+          const b = { type: btn.type === 'DYNAMIC_URL' ? 'URL' : btn.type };
+          if (btn.text && btn.type !== 'COPY_CODE') b.text = btn.text;
           if (btn.type === 'PHONE_NUMBER') b.phone_number = btn.phone;
           if (btn.type === 'URL' || btn.type === 'DYNAMIC_URL') b.url = btn.url;
-          if (btn.type === 'COPY_CODE') b.example = [btn.example];
+          if (btn.type === 'COPY_CODE') b.example = [btn.example || 'SAMPLE'];
+          if (btn.type === 'DYNAMIC_URL') b.example = [btn.example || ''];
           return b;
         })
       });
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/create`, {
+      const url = isEditMode 
+        ? `${import.meta.env.VITE_API_URL}/api/whatsapp/templates/update`
+        : `${import.meta.env.VITE_API_URL}/api/whatsapp/templates/create`;
+
+      const payload = isEditMode
+        ? { template_uid: editTemplateUid, template_id: editMetaTemplateId, components }
+        : { name: formData.name, category: formData.category, language: formData.language, components };
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ name: formData.name, category: formData.category, language: formData.language, components: components })
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (response.ok && result.success) {
-        alert("Template created successfully!");
+        alert(isEditMode ? "Template updated successfully!" : "Template created successfully!");
         navigate('/dashboard/whatsapp-templates');
       } else {
         if (result.message && result.message.includes("WABA")) {
           alert("Setup Incomplete: " + result.message + ". Please go to Settings to complete your WhatsApp integration.");
         } else {
-          alert(result.message || "Failed to create template");
+          alert(result.message || "Failed to save template");
         }
       }
     } catch (error) {
@@ -195,7 +309,9 @@ export default function CreateWhatsAppTemplate() {
       <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>Create New Template</h1>
+        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
+          {isEditMode ? 'Edit Template' : 'Create New Template'}
+        </h1>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn-top-slate" onClick={() => navigate('/dashboard/whatsapp-templates')}>Back to Templates</button>
           <button className="btn-top-navy">Help</button>
@@ -206,13 +322,13 @@ export default function CreateWhatsAppTemplate() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="form-group">
             <label className="form-label-gray">Template Name</label>
-            <input type="text" name="name" className="form-input-white" placeholder="Enter template name..." value={formData.name} onChange={handleChange} />
+            <input type="text" name="name" className="form-input-white" placeholder="Enter template name..." value={formData.name} onChange={handleChange} disabled={isEditMode} style={{ backgroundColor: isEditMode ? '#f1f5f9' : 'white', cursor: isEditMode ? 'not-allowed' : 'text' }} />
             <span style={{ color: 'var(--wa-green)', fontSize: '0.85rem', fontWeight: 600, marginTop: '0.5rem', display: 'block' }}>Template Formatting Help</span>
           </div>
 
           <div className="form-group">
             <label className="form-label-gray">Template Language Code</label>
-            <select name="language" className="form-input-white" value={formData.language} onChange={handleChange}>
+            <select name="language" className="form-input-white" value={formData.language} onChange={handleChange} disabled={isEditMode} style={{ backgroundColor: isEditMode ? '#f1f5f9' : 'white', cursor: isEditMode ? 'not-allowed' : 'pointer' }}>
               <option value="en">English (en)</option>
               <option value="hi">Hindi (hi)</option>
             </select>
@@ -227,7 +343,7 @@ export default function CreateWhatsAppTemplate() {
 
           <div className="form-group">
             <label className="form-label-gray">Category</label>
-            <select name="category" className="form-input-white" value={formData.category} onChange={handleChange}>
+            <select name="category" className="form-input-white" value={formData.category} onChange={handleChange} disabled={isEditMode} style={{ backgroundColor: isEditMode ? '#f1f5f9' : 'white', cursor: isEditMode ? 'not-allowed' : 'pointer' }}>
               <option value="MARKETING">MARKETING</option>
               <option value="UTILITY">UTILITY</option>
             </select>
