@@ -18,6 +18,8 @@ export default function WhatsAppTemplates() {
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const filteredTemplates = templatesData.filter(tpl =>
     (tpl.template_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -68,7 +70,32 @@ export default function WhatsAppTemplates() {
       }
     };
     fetchTemplates();
-  }, [currentPage, entriesCount]);
+  }, [currentPage, entriesCount, refreshKey]);
+
+  const handleSyncTemplates = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/sync`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert("Templates synced successfully!");
+        setRefreshKey(prev => prev + 1);
+      } else {
+        alert(result.message || "Failed to sync templates");
+      }
+    } catch (err) {
+      console.error("Error syncing templates:", err);
+      alert("Error syncing templates. Server error.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const getPageNumbers = () => {
     const pages = [];
@@ -159,7 +186,21 @@ export default function WhatsAppTemplates() {
           >
             Create New Template
           </button>
-          <button className="btn btn-primary" style={{ padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', width: 'auto' }}>Sync WhatsApp Templates</button>
+          <button 
+            className="btn btn-primary" 
+            style={{ 
+              padding: '0.6rem 1rem', 
+              fontSize: '0.8rem', 
+              fontWeight: 600, 
+              cursor: isSyncing ? 'not-allowed' : 'pointer', 
+              width: 'auto',
+              opacity: isSyncing ? 0.7 : 1
+            }}
+            disabled={isSyncing}
+            onClick={handleSyncTemplates}
+          >
+            {isSyncing ? 'Syncing...' : 'Sync WhatsApp Templates'}
+          </button>
           <button className="btn btn-primary" style={{ padding: '0.6rem 1rem', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', display: 'flex', gap: '0.35rem', alignItems: 'center', width: 'auto' }}>Manage Templates on Meta <ExternalLink size={14} /></button>
         </div>
       </div>

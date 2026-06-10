@@ -21,6 +21,7 @@ export default function Contacts() {
   const [showBulkDropdown, setShowBulkDropdown] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groups, setGroups] = useState([]);
+  const [labels, setLabels] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewContactDetails, setViewContactDetails] = useState(null);
@@ -83,9 +84,41 @@ export default function Contacts() {
     } catch (err) { console.error("Error fetching contact groups", err); }
   };
 
+  const fetchLabels = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ page: 1, limit: 100 })
+      });
+      if (!response.ok) return;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const result = await response.json();
+        if (result?.success) setLabels(result.data);
+      }
+    } catch (err) { console.error("Error fetching contact labels", err); }
+  };
+
+  const renderTags = (tagsString) => {
+    if (!tagsString) return '';
+    const tagsArray = typeof tagsString === 'string' ? tagsString.split(',') : (Array.isArray(tagsString) ? tagsString : []);
+    const mapped = tagsArray.map(tag => {
+      const trimmed = tag.trim();
+      const foundLabel = labels.find(l => String(l._id) === trimmed || String(l.id) === trimmed);
+      return foundLabel ? (foundLabel.title || foundLabel.name) : trimmed;
+    });
+    const unique = [...new Set(mapped.filter(Boolean))];
+    return unique.join(', ');
+  };
+
   useEffect(() => {
     fetchContacts();
     fetchGroups();
+    fetchLabels();
   }, [currentPage, entriesCount]);
 
   const handleSyncCustomers = async () => {
@@ -381,7 +414,7 @@ export default function Contacts() {
                       ? contact.groups.map(g => typeof g === 'object' ? g.title : g).join(', ')
                       : (contact.groups || '')}
                   </td>
-                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{contact.tags}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{renderTags(contact.tags)}</td>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     <span style={{ backgroundColor: contact.marketing === 'Opted In' ? 'rgba(37, 211, 102, 0.1)' : '#f1f5f9', color: contact.marketing === 'Opted In' ? 'var(--wa-green)' : '#64748b', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>{contact.whatsapp_opt_out_text || (contact.marketing === 'Opted In' ? 'Opted In' : 'Opted Out')}</span>
                   </td>

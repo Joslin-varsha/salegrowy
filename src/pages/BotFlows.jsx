@@ -207,22 +207,6 @@ export default function BotFlows() {
           Bot Flows
         </h1>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button style={{
-            backgroundColor: '#64748b',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            padding: '0.6rem 1.25rem',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'background-color 0.2s'
-          }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#475569'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#64748b'}
-          >
-            Enable Order Management Bot
-          </button>
           <button
             onClick={() => handleOpenModal('add')}
             style={{

@@ -32,8 +32,17 @@ export default function CreateContact() {
   const passedContact = location.state?.contact;
 
   const [tagInputs, setTagInputs] = useState(['']);
+  const [customTags, setCustomTags] = useState({});
 
   const handleTagChange = (index, value) => {
+    if (value === '__custom__') {
+      setCustomTags(prev => ({ ...prev, [index]: true }));
+      const updated = [...tagInputs];
+      updated[index] = '';
+      setTagInputs(updated);
+      return;
+    }
+
     const updated = [...tagInputs];
     updated[index] = value;
     setTagInputs(updated);
@@ -53,6 +62,15 @@ export default function CreateContact() {
 
     const updated = tagInputs.filter((_, i) => i !== index);
     setTagInputs(updated);
+
+    const updatedCustom = {};
+    updated.forEach((_, i) => {
+      const origIndex = i >= index ? i + 1 : i;
+      if (customTags[origIndex]) {
+        updatedCustom[i] = true;
+      }
+    });
+    setCustomTags(updatedCustom);
 
     setFormData({
       ...formData,
@@ -92,10 +110,6 @@ export default function CreateContact() {
       newErrors.language = "Language code required";
     }
 
-    if (!formData.groups) {
-      newErrors.groups = "Group required";
-    }
-
     return newErrors;
   };
 
@@ -118,6 +132,29 @@ export default function CreateContact() {
       // ✅ Get unique tags from form data
       const uniqueTags = [...new Set(tagsArray)];
 
+      // ✅ Separate existing label IDs and new tag titles
+      const existingLabelIds = [];
+      const newTagsList = [];
+
+      uniqueTags.forEach(t => {
+        const matchedLabel = labels.find(l => 
+          (l.title && l.title.toLowerCase().trim() === String(t).toLowerCase().trim()) || 
+          (l.name && l.name.toLowerCase().trim() === String(t).toLowerCase().trim()) ||
+          String(l._id) === String(t) ||
+          String(l.id) === String(t)
+        );
+        if (matchedLabel) {
+          const lid = Number(matchedLabel._id || matchedLabel.id);
+          if (!isNaN(lid)) {
+            existingLabelIds.push(lid);
+          }
+        } else {
+          if (t && String(t).trim() !== '') {
+            newTagsList.push(t);
+          }
+        }
+      });
+
       // ✅ STEP 4: Create or update contact
       const url = id 
         ? `${import.meta.env.VITE_API_URL}/api/contact/update/${id}`
@@ -138,10 +175,10 @@ export default function CreateContact() {
           whatsapp_opt_out: optOut ? "1" : "0",
           disable_ai_bot: "0",
           countries__id: formData.country || "91",
-          contact_tags: id ? uniqueTags : [],
-          newTag: uniqueTags,
-          groups: formData.groups,
-          contact_groups: [formData.groups],
+          contact_tags: existingLabelIds,
+          newTag: newTagsList,
+          groups: formData.groups ? String(formData.groups) : "",
+          contact_groups: formData.groups ? [Number(formData.groups)] : [],
           custom_input_fields: {}
         })
       });
@@ -246,6 +283,80 @@ export default function CreateContact() {
       setOptOut(contact.whatsapp_opt_out === "1" || contact.whatsapp_opt_out === 1 || contact.marketing === 'Opted Out' || contact.whatsapp_opt_out_text === 'Opted Out');
     }
   }, [id, passedContact]);
+
+  useEffect(() => {
+    if (id && passedContact && groups.length > 0) {
+      const contact = passedContact;
+      let resolvedGroupVal = '';
+      let rawGroupIdentifier = '';
+      if (contact.contact_groups && contact.contact_groups[0]) {
+        rawGroupIdentifier = contact.contact_groups[0];
+      } else if (Array.isArray(contact.groups) && contact.groups.length > 0) {
+        rawGroupIdentifier = typeof contact.groups[0] === 'object' ? contact.groups[0]._id || contact.groups[0].title : contact.groups[0];
+      } else if (contact.groups) {
+        rawGroupIdentifier = contact.groups;
+      }
+      
+      if (rawGroupIdentifier) {
+        const foundById = groups.find(g => String(g._id) === String(rawGroupIdentifier));
+        if (foundById) {
+          resolvedGroupVal = String(foundById._id);
+        } else {
+          const foundByTitle = groups.find(g => g.title && g.title.toLowerCase().trim() === String(rawGroupIdentifier).toLowerCase().trim());
+          if (foundByTitle) {
+            resolvedGroupVal = String(foundByTitle._id);
+          } else {
+            if (/^\d+$/.test(rawGroupIdentifier)) {
+              resolvedGroupVal = String(rawGroupIdentifier);
+            }
+          }
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        groups: resolvedGroupVal
+      }));
+    }
+  }, [id, passedContact, groups]);
+
+  useEffect(() => {
+    if (labels.length > 0 && formData.tags.length > 0) {
+      const mappedTags = formData.tags.map(tag => {
+        const foundLabel = labels.find(l => String(l._id) === String(tag) || String(l.id) === String(tag));
+        return foundLabel ? (foundLabel.title || foundLabel.name || tag) : tag;
+      });
+      const uniqueMapped = [...new Set(mappedTags.filter(Boolean))];
+      if (JSON.stringify(uniqueMapped) !== JSON.stringify(formData.tags)) {
+        setFormData(prev => ({
+          ...prev,
+          tags: uniqueMapped
+        }));
+        setTagInputs(uniqueMapped);
+      }
+    }
+  }, [labels, formData.tags]);
+
+  useEffect(() => {
+    if (labels.length > 0 && tagInputs.length > 0) {
+      const initialCustomTags = {};
+      tagInputs.forEach((tag, index) => {
+        const matched = labels.find(l => 
+          (l.title && l.title.toLowerCase().trim() === String(tag).toLowerCase().trim()) || 
+          (l.name && l.name.toLowerCase().trim() === String(tag).toLowerCase().trim()) ||
+          String(l._id) === String(tag) ||
+          String(l.id) === String(tag)
+        );
+        if (!matched && tag !== '') {
+          initialCustomTags[index] = true;
+        }
+      });
+      const hasDiff = Object.keys(initialCustomTags).some(k => customTags[k] !== initialCustomTags[k]);
+      if (hasDiff) {
+        setCustomTags(prev => ({ ...initialCustomTags, ...prev }));
+      }
+    }
+  }, [labels, tagInputs]);
 
   return (
     <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
@@ -388,19 +499,53 @@ export default function CreateContact() {
                 {tagInputs.map((tag, index) => (
                   <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
 
-                    <select
-                      className="form-input"
-                      value={tag}
-                      onChange={(e) => handleTagChange(index, e.target.value)}
-                      style={{ padding: '0.5rem 0.75rem', appearance: 'auto', backgroundColor: '#ffffff', flex: 1 }}
-                    >
-                      <option value="">Select Label</option>
-                      {labels.map((l, i) => (
-                        <option key={i} value={l._id || l.id || l.title || l}>
-                          {l.title || l.name || l}
+                    {customTags[index] ? (
+                      <div style={{ display: 'flex', gap: '5px', flex: 1 }}>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={tag}
+                          onChange={(e) => handleTagChange(index, e.target.value)}
+                          placeholder="Type new tag name..."
+                          style={{ padding: '0.5rem 0.75rem', backgroundColor: '#ffffff', flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomTags(prev => ({ ...prev, [index]: false }));
+                            handleTagChange(index, '');
+                          }}
+                          style={{
+                            background: '#64748b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            padding: '4px 12px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Select Existing
+                        </button>
+                      </div>
+                    ) : (
+                      <select
+                        className="form-input"
+                        value={tag}
+                        onChange={(e) => handleTagChange(index, e.target.value)}
+                        style={{ padding: '0.5rem 0.75rem', appearance: 'auto', backgroundColor: '#ffffff', flex: 1 }}
+                      >
+                        <option value="">Select Label</option>
+                        {labels.map((l, i) => (
+                          <option key={i} value={l.title || l.name || l._id || l}>
+                            {l.title || l.name || l}
+                          </option>
+                        ))}
+                        <option value="__custom__" style={{ color: '#22c55e', fontWeight: 600 }}>
+                          + Create Custom Tag
                         </option>
-                      ))}
-                    </select>
+                      </select>
+                    )}
 
                     {index > 0 && (
                       <button
