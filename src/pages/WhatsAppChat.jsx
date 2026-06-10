@@ -176,44 +176,50 @@ const channelRef = useRef([]);
     console.log('✅ Subscription success:', channelName);
   });
 
- channel.bind('whatsappChat', (data) => {
-  console.log('🔥 EVENT:', data);
+  channel.bind('whatsappChat', (data) => {
+    console.log('🔥 EVENT:', data);
 
-  if (!data) return;
+    if (!data) return;
 
-  const contactUid = String(data.contactUid);
-  const selectedId = selectedChatRef.current ? String(selectedChatRef.current._id || selectedChatRef.current._uid) : null;
+    const contactUid = String(data.contactUid);
+    
+    // Check if currently selected chat matches the incoming message's contact
+    const isCurrentChat = selectedChatRef.current && (
+      String(selectedChatRef.current._id) === contactUid || 
+      String(selectedChatRef.current._uid) === contactUid
+    );
 
-  // Refresh chats instantly without API call
-  setChats(prev => {
-    const updated = prev.map(c => {
-      if (!c) return c;
+    // Refresh chats instantly without API call
+    setChats(prev => {
+      const updated = prev.map(c => {
+        if (!c) return c;
 
-      if (String(c._id || c._uid) === contactUid) {
-        return {
-          ...c,
-          last_message: data.contactDescription || c.last_message,
-          last_message_time: data.formatted_last_message_time || c.last_message_time,
-          unread_count: 
-            selectedId === contactUid 
+        // Robust check matching either database integer ID or UUID string
+        const matchesContact = String(c._id) === contactUid || String(c._uid) === contactUid;
+        if (matchesContact) {
+          return {
+            ...c,
+            last_message: data.contactDescription || c.last_message,
+            last_message_time: data.formatted_last_message_time || c.last_message_time,
+            unread_count: isCurrentChat 
               ? 0 
               : (c.unread_count || 0) + (data.isNewIncomingMessage ? 1 : 0)
-        };
-      }
+          };
+        }
 
-      return c;
+        return c;
+      });
+
+      return [...updated].sort(
+        (a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0)
+      );
     });
 
-    return [...updated].sort(
-      (a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0)
-    );
+    // Refresh opened chat instantly
+    if (isCurrentChat) {
+      fetchHistorySilent(selectedChatRef.current);
+    }
   });
-
-  // Refresh opened chat instantly
-  if (selectedId === contactUid) {
-    fetchHistorySilent(selectedChatRef.current);
-  }
-});
   });
 
   return () => {
