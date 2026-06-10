@@ -8,6 +8,8 @@ import {
     Settings,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { message } from 'antd';
+import { SyncOutlined } from '@ant-design/icons';
 
 // Separate Components
 import Sidebar from './components/Sidebar';
@@ -24,6 +26,8 @@ const WidgetHome = ({ embedded = false }) => {
 
     const [isAiEnabled, setIsAiEnabled] = useState(true);
     const [isAiUpdating, setIsAiUpdating] = useState(false);
+    const [isWidgetEnabled, setIsWidgetEnabled] = useState(false);
+    const [isWidgetUpdating, setIsWidgetUpdating] = useState(false);
 
     const BASE_URI = import.meta.env.VITE_BASE_URI;
 
@@ -33,12 +37,16 @@ const WidgetHome = ({ embedded = false }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({ vendor_id: VENDOR_ID })
             });
             const result = await response.json();
             if (result.success && result.data) {
                 setIsAiEnabled(result.data.ai_enabled === 1);
+                if (result.widgetEnabled !== undefined) {
+                    setIsWidgetEnabled(result.widgetEnabled === 1);
+                }
             }
         } catch (error) {
             console.error('Error fetching AI status:', error);
@@ -46,8 +54,10 @@ const WidgetHome = ({ embedded = false }) => {
     };
 
     useEffect(() => {
-        fetchAiStatus();
-    }, []);
+        if (VENDOR_ID) {
+            fetchAiStatus();
+        }
+    }, [VENDOR_ID]);
 
     const toggleAiStatus = async () => {
         const newStatus = !isAiEnabled;
@@ -57,6 +67,7 @@ const WidgetHome = ({ embedded = false }) => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
                     vendor_id: VENDOR_ID,
@@ -66,11 +77,45 @@ const WidgetHome = ({ embedded = false }) => {
             const result = await response.json();
             if (result.success) {
                 setIsAiEnabled(newStatus);
+                message.success(`AI Agent ${newStatus ? 'enabled' : 'disabled'}`);
+            } else {
+                message.error(result.message || 'Failed to update AI status');
             }
         } catch (error) {
             console.error('Error updating AI status:', error);
+            message.error('Failed to update AI status');
         } finally {
             setIsAiUpdating(false);
+        }
+    };
+
+    const toggleWidgetStatus = async () => {
+        const newStatus = !isWidgetEnabled;
+        setIsWidgetUpdating(true);
+        try {
+            const response = await fetch(`${BASE_URI}/api/widgetToggle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    vendor_id: VENDOR_ID,
+                    extension: newStatus ? 1 : 0
+                })
+            });
+            const result = await response.json();
+            if (result.success || result.status || result.success === undefined) {
+                setIsWidgetEnabled(newStatus);
+                message.success(`Widget ${newStatus ? 'enabled' : 'disabled'}`);
+            } else {
+                message.error(result.message || 'Failed to update Widget status');
+            }
+        } catch (error) {
+            console.error('Error updating Widget status:', error);
+            message.error('Failed to update Widget status');
+        } finally {
+            setIsWidgetUpdating(false);
         }
     };
 
@@ -105,7 +150,6 @@ const WidgetHome = ({ embedded = false }) => {
                 return <InboxSection accentColor={accentColor} />;
         }
     };
-
     if (embedded) {
         return (
             <div className="flex flex-col h-full bg-transparent font-sans text-slate-900 tracking-tight text-sm">
@@ -127,8 +171,98 @@ const WidgetHome = ({ embedded = false }) => {
                         ))}
                     </div>
 
-                    {/* Premium Agent Status Switch */}
-                 
+                    {/* Premium Agent Status Switches */}
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                        {/* Enable / Disable AI Switch */}
+                        <div 
+                            onClick={!isAiUpdating ? toggleAiStatus : undefined}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '1.5rem',
+                                padding: '0.45rem 1rem',
+                                border: '1px solid #edf2f7',
+                                borderRadius: '8px',
+                                background: '#f8fafc',
+                                cursor: isAiUpdating ? 'not-allowed' : 'pointer',
+                                minWidth: '220px',
+                                userSelect: 'none',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Enable / Disable AI</span>
+                            {isAiUpdating ? (
+                                <SyncOutlined spin style={{ color: 'var(--wa-green)', fontSize: '13px' }} />
+                            ) : (
+                                <div style={{ 
+                                    width: '34px', 
+                                    height: '18px', 
+                                    borderRadius: '18px', 
+                                    background: isAiEnabled ? 'var(--wa-green)' : '#cbd5e1',
+                                    position: 'relative',
+                                    transition: 'all 0.2s ease',
+                                }}>
+                                    <div style={{ 
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: isAiEnabled ? '18px' : '2px',
+                                        width: '14px',
+                                        height: '14px',
+                                        borderRadius: '50%',
+                                        background: '#ffffff',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                                    }}></div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Enable / Disable Widget Switch */}
+                        <div 
+                            onClick={!isWidgetUpdating ? toggleWidgetStatus : undefined}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '1.5rem',
+                                padding: '0.45rem 1rem',
+                                border: '1px solid #edf2f7',
+                                borderRadius: '8px',
+                                background: '#f8fafc',
+                                cursor: isWidgetUpdating ? 'not-allowed' : 'pointer',
+                                minWidth: '220px',
+                                userSelect: 'none',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Enable / Disable Widget</span>
+                            {isWidgetUpdating ? (
+                                <SyncOutlined spin style={{ color: 'var(--wa-green)', fontSize: '13px' }} />
+                            ) : (
+                                <div style={{ 
+                                    width: '34px', 
+                                    height: '18px', 
+                                    borderRadius: '18px', 
+                                    background: isWidgetEnabled ? 'var(--wa-green)' : '#cbd5e1',
+                                    position: 'relative',
+                                    transition: 'all 0.2s ease',
+                                }}>
+                                    <div style={{ 
+                                        position: 'absolute',
+                                        top: '2px',
+                                        left: isWidgetEnabled ? '18px' : '2px',
+                                        width: '14px',
+                                        height: '14px',
+                                        borderRadius: '50%',
+                                        background: '#ffffff',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+                                    }}></div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </nav>
                 <div className="flex-1 overflow-y-auto">
                     <AnimatePresence mode="wait">
