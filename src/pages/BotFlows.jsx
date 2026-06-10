@@ -6,6 +6,9 @@ import { Edit, Trash2, GitBranch, Search, ChevronLeft, ChevronRight } from 'luci
 export default function BotFlows() {
   const [entriesCount, setEntriesCount] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,11 +28,14 @@ export default function BotFlows() {
   useEffect(() => {
     const fetchBots = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/botlist`, {
           method: 'POST',
           headers: {
+            'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+          },
+          body: JSON.stringify({ page: currentPage, limit: entriesCount })
         });
         const result = await response.json();
 
@@ -48,6 +54,17 @@ export default function BotFlows() {
           }));
 
           setFlowsData(formatted);
+          
+          if (result.pagination) {
+            setTotalRecords(result.pagination.total || result.recordsTotal || 0);
+            setTotalPages(result.pagination.total_pages || 1);
+          } else if (result.recordsTotal !== undefined) {
+            setTotalRecords(result.recordsTotal);
+            setTotalPages(Math.ceil(result.recordsTotal / entriesCount));
+          } else {
+            setTotalRecords(formatted.length);
+            setTotalPages(1);
+          }
         }
       } catch (err) {
         console.error("Error fetching bots:", err);
@@ -57,7 +74,11 @@ export default function BotFlows() {
     };
 
     fetchBots();
-  }, []);
+  }, [currentPage, entriesCount]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, entriesCount]);
 
 
   const handleOpenFlowBuilder = (flow) => {
@@ -132,14 +153,40 @@ export default function BotFlows() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (modalMode === 'add') {
-      const newFlow = {
-        id: flowsData.length + 1,
-        title: formData.title,
-        trigger: formData.trigger,
-        status: formData.status
-      };
-      setFlowsData([newFlow, ...flowsData]);
-      handleCloseModal();
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/bot/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            start_trigger: formData.trigger,
+            reply_webhook_url: formData.webhookUrl
+          })
+        });
+        const result = await response.json();
+        if (result.success || response.ok) {
+          const newBot = result.data || {};
+          const newFlow = {
+            id: newBot._id || newBot.id || Date.now(),
+            title: newBot.title || formData.title,
+            trigger: newBot.start_trigger || formData.trigger,
+            webhookUrl: newBot.reply_webhook_url || formData.webhookUrl,
+            status: newBot.status === 1 ? 'Active' : 'Inactive',
+            uid: newBot._uid || '',
+            vendorUid: newBot.vendorUid || ''
+          };
+          setFlowsData([newFlow, ...flowsData]);
+          handleCloseModal();
+        } else {
+          alert(result.message || 'Error creating bot flow');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error creating bot flow');
+      }
     } else {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/bot/update/${formData.id}`, {
@@ -282,9 +329,11 @@ export default function BotFlows() {
               </tr>
             </thead>
             <tbody>
-              {filteredFlows.length === 0 ? (
+              {loading ? (
+                <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>Loading bot flows...</td></tr>
+              ) : filteredFlows.length === 0 ? (
                 <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>No bot flows found.</td></tr>
-              ) : filteredFlows.slice(0, entriesCount).map((flow, idx) => (
+              ) : filteredFlows.map((flow, idx) => (
                 <tr key={flow.id} style={{ borderBottom: '1px solid #f1f5f9', backgroundColor: idx % 2 === 0 ? 'white' : '#f8fafc' }}>
                   <td style={{ padding: '1.25rem 1rem', fontSize: '0.95rem', color: '#334155', fontWeight: 500 }}>{flow.title}</td>
                   <td style={{ padding: '1.25rem 1rem', fontSize: '0.9rem', color: '#64748b', maxWidth: '400px' }}>{flow.trigger}</td>
@@ -355,12 +404,49 @@ export default function BotFlows() {
         {/* Pagination */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
           <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-            Showing 1 to {Math.min(filteredFlows.length, entriesCount)} of {filteredFlows.length} entries
+            Showing {totalRecords === 0 ? 0 : (currentPage - 1) * entriesCount + 1} to {Math.min(currentPage * entriesCount, totalRecords)} of {totalRecords} entries
           </div>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
-            <button style={{ padding: '0.4rem 0.75rem', borderRadius: '4px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#64748b', cursor: 'pointer' }}><ChevronLeft size={16} /></button>
-            <button style={{ padding: '0.4rem 0.75rem', borderRadius: '4px', border: 'none', backgroundColor: '#22c55e', color: 'white', fontWeight: 600, cursor: 'pointer' }}>1</button>
-            <button style={{ padding: '0.4rem 0.75rem', borderRadius: '4px', border: '1px solid #e2e8f0', backgroundColor: 'white', color: '#64748b', cursor: 'pointer' }}><ChevronRight size={16} /></button>
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              style={{ padding: '0.4rem 0.75rem', borderRadius: '4px', border: '1px solid #e2e8f0', backgroundColor: currentPage === 1 ? '#f8fafc' : 'white', color: currentPage === 1 ? '#cbd5e1' : '#64748b', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              // Simple pagination display logic to show up to 5 pages
+              let startPage = Math.max(1, currentPage - 2);
+              if (startPage + 4 > totalPages) {
+                startPage = Math.max(1, totalPages - 4);
+              }
+              return startPage + i;
+            }).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                style={{
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: '4px',
+                  border: currentPage === pageNum ? 'none' : '1px solid #e2e8f0',
+                  backgroundColor: currentPage === pageNum ? '#22c55e' : 'white',
+                  color: currentPage === pageNum ? 'white' : '#64748b',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            <button
+              disabled={currentPage >= totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              style={{ padding: '0.4rem 0.75rem', borderRadius: '4px', border: '1px solid #e2e8f0', backgroundColor: currentPage >= totalPages || totalPages === 0 ? '#f8fafc' : 'white', color: currentPage >= totalPages || totalPages === 0 ? '#cbd5e1' : '#64748b', cursor: currentPage >= totalPages || totalPages === 0 ? 'not-allowed' : 'pointer' }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
