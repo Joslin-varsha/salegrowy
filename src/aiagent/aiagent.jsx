@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -129,7 +130,8 @@ const SyncProductsContent = () => {
 };
 
 const AIAgent = () => {
-  const [activeSidebar, setActiveSidebar] = useState('knowledge');
+  const { tab } = useParams();
+  const activeSidebar = tab === 'stop-contacts' ? 'stop_contacts' : (tab || 'knowledge');
   const [isAiEnabled, setIsAiEnabled] = useState(true);
   const [isAiUpdating, setIsAiUpdating] = useState(false);
   const [isWidgetEnabled, setIsWidgetEnabled] = useState(false);
@@ -446,7 +448,7 @@ const AIAgent = () => {
         return <ActionsContent vendorId={vendorId} />;
               case 'sync_products':
           return <SyncProductsContent />;
-        case 'widget':
+      case 'widget':
         return <WidgetHome embedded={true} />;
       case 'stop_contacts':
         return <AiStopContactsContent vendorId={vendorId} />;
@@ -456,7 +458,7 @@ const AIAgent = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
+    <div style={{ background: '#f8fafc', minHeight: '100%' }}>
       <Modal
         open={showLoadingDialog}
         closable={!isLoadingToken}
@@ -573,224 +575,15 @@ const AIAgent = () => {
           />
         </div>
       </Modal>
-      <Layout>
-        {/* Sidebar */}
-        <Sider 
-          width={280} 
-          style={{ 
-            background: '#f0fdf4',
-            boxShadow: '4px 0 15px rgba(0,0,0,0.02)',
-            borderRight: '1px solid #bef5d1ff',
-            height: '100vh',
-            position: 'sticky',
-            top: 0,
-            left: 0
-          }}
-        >
-          <div style={{ padding: '24px 24px 0' }}>
-            <Button 
-              type="text" 
-              icon={<ArrowLeftOutlined />}
-              onClick={() => window.history.back()}
-              style={{ color: '#059669', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, padding: 0 }}
-            >
-              Back
-            </Button>
-          </div>
-          <div style={{ padding: '12px 0' }}>
-            {menuItems.map((item, index) => (
-              <React.Fragment key={item.key}>
-                {item.key === 'widget' && (
-                  <div style={{ 
-                    padding: '24px 24px 8px', 
-                    fontSize: '10px', 
-                    fontWeight: 800, 
-                    color: '#059669', 
-                    letterSpacing: '1.5px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{ opacity: 0.6 }}>CHANNEL CONFIGURATION</span>
-                    <div style={{ flex: 1, height: '1px', background: '#bef5d1ff', opacity: 0.5 }}></div>
-                  </div>
-                )}
-                <div 
-                  onClick={() => setActiveSidebar(item.key)}
-                  style={{
-                    padding: '16px 24px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '16px',
-                    background: activeSidebar === item.key ? 'rgba(22, 163, 74, 0.1)' : 'transparent',
-                    borderLeft: activeSidebar === item.key ? '4px solid #16a34a' : '4px solid transparent',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ 
-                    fontSize: '20px', 
-                    color: activeSidebar === item.key ? '#16a34a' : '#64748b',
-                    marginTop: '2px'
-                  }}>
-                    {item.icon}
-                  </div>
-                  <div>
-                    <div style={{ 
-                      color: activeSidebar === item.key ? '#065f46' : '#475569', 
-                      fontWeight: 700,
-                      fontSize: '13px',
-                      letterSpacing: '0.5px'
-                    }}>
-                      {item.label}
-                    </div>
-                    <div style={{ 
-                      color: activeSidebar === item.key ? '#16a34a' : '#94a3b8', 
-                      fontSize: '11px',
-                      marginTop: '2px'
-                    }}>
-                      {item.description}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Expandable Agent Status for Widget */}
-                {item.key === 'widget' && activeSidebar === 'widget' && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    style={{ padding: '4px 10px 1px 15px', overflow: 'hidden' }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                      <div 
-                        onClick={!isAiUpdating ? toggleAiStatus : undefined}
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between',
-                          cursor: isAiUpdating ? 'not-allowed' : 'pointer',
-                          padding: '12px 16px',
-                          background: isAiEnabled ? '#fff' : '#f8fafc',
-                          border: isAiEnabled ? '2px solid #16a34a' : '1px solid #e2e8f0',
-                          borderRadius: '10px',
-                          transition: 'all 0.3s ease',
-                          boxShadow: isAiEnabled ? '0 4px 6px -1px rgba(22, 163, 74, 0.1)' : 'none',
-                        }}
-                      >
-                        <div style={{ 
-                          fontSize: '11px', 
-                          fontWeight: 900, 
-                          color: isAiEnabled ? '#16a34a' : '#94a3b8', 
-                          letterSpacing: '0.5px', 
-                          textTransform: 'uppercase'
-                        }}>
-                          Enable / Disable AI
-                        </div>
-                        
-                        {isAiUpdating ? (
-                          <SyncOutlined spin style={{ color: '#16a34a', fontSize: '16px' }} />
-                        ) : (
-                          <div style={{ 
-                            width: '36px', 
-                            height: '20px', 
-                            borderRadius: '20px', 
-                            background: isAiEnabled ? '#16a34a' : '#cbd5e1',
-                            position: 'relative',
-                            transition: 'all 0.3s ease',
-                            boxShadow: isAiEnabled ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : 'none'
-                          }}>
-                            <div style={{ 
-                              position: 'absolute',
-                              top: '2px',
-                              left: isAiEnabled ? '18px' : '2px',
-                              width: '16px',
-                              height: '16px',
-                              borderRadius: '50%',
-                              background: '#fff',
-                              transition: 'all 0.3s ease',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                            }}></div>
-                          </div>
-                        )}
-                      </div>
 
-                      <div 
-                        onClick={!isWidgetUpdating ? toggleWidgetStatus : undefined}
-                        style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between',
-                          cursor: isWidgetUpdating ? 'not-allowed' : 'pointer',
-                          padding: '12px 16px',
-                          background: isWidgetEnabled ? '#fff' : '#f8fafc',
-                          border: isWidgetEnabled ? '2px solid #16a34a' : '1px solid #e2e8f0',
-                          borderRadius: '10px',
-                          transition: 'all 0.3s ease',
-                          boxShadow: isWidgetEnabled ? '0 4px 6px -1px rgba(22, 163, 74, 0.1)' : 'none',
-                        }}
-                      >
-                        <div style={{ 
-                          fontSize: '11px', 
-                          fontWeight: 900, 
-                          color: isWidgetEnabled ? '#16a34a' : '#94a3b8', 
-                          letterSpacing: '0.5px', 
-                          textTransform: 'uppercase'
-                        }}>
-                          Enable / Disable Widget
-                        </div>
-                        
-                        {isWidgetUpdating ? (
-                          <SyncOutlined spin style={{ color: '#16a34a', fontSize: '16px' }} />
-                        ) : (
-                          <div style={{ 
-                            width: '36px', 
-                            height: '20px', 
-                            borderRadius: '20px', 
-                            background: isWidgetEnabled ? '#16a34a' : '#cbd5e1',
-                            position: 'relative',
-                            transition: 'all 0.3s ease',
-                            boxShadow: isWidgetEnabled ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : 'none'
-                          }}>
-                            <div style={{ 
-                              position: 'absolute',
-                              top: '2px',
-                              left: isWidgetEnabled ? '18px' : '2px',
-                              width: '16px',
-                              height: '16px',
-                              borderRadius: '50%',
-                              background: '#fff',
-                              transition: 'all 0.3s ease',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                            }}></div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </Sider>
-
-        {/* Content Area */}
-        <Content style={{ 
-          padding: '32px 48px', 
-          overflowY: 'auto', 
-          background: '#f8fafc',
-          height: '100vh'
-        }}>
-          <motion.div
-            key={activeSidebar}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderContent()}
-          </motion.div>
-        </Content>
-      </Layout>
+      <motion.div
+        key={activeSidebar}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {renderContent()}
+      </motion.div>
 
       <style>{`
         .ant-select-selector {
@@ -826,7 +619,7 @@ const AIAgent = () => {
           border-color: #cbd5e1;
         }
       `}</style>
-    </Layout>
+    </div>
   );
 };
 

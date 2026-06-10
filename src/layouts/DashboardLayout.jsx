@@ -1,9 +1,201 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles, Tag} from 'lucide-react';
+import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles, Tag, Zap} from 'lucide-react';
 import { SyncOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 
+
+const WidgetTogglesInSidebar = () => {
+  const [isAiEnabled, setIsAiEnabled] = useState(true);
+  const [isAiUpdating, setIsAiUpdating] = useState(false);
+  const [isWidgetEnabled, setIsWidgetEnabled] = useState(false);
+  const [isWidgetUpdating, setIsWidgetUpdating] = useState(false);
+
+  const vendorId = localStorage.getItem('vendor_id');
+
+  const fetchAiStatus = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URI}/api/getWidgetAi`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ vendor_id: vendorId })
+      });
+      if (res.ok) {
+        const responseData = await res.json();
+        if (responseData.success && responseData.data) {
+          setIsAiEnabled(responseData.data.ai_enabled === 1);
+          if (responseData.widgetEnabled !== undefined) {
+            setIsWidgetEnabled(responseData.widgetEnabled === 1);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching AI status:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (vendorId) {
+      fetchAiStatus();
+    }
+  }, [vendorId]);
+
+  const toggleAiStatus = async () => {
+    const newStatus = !isAiEnabled;
+    setIsAiUpdating(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URI}/api/enableDisableWidgetAi`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          vendor_id: vendorId,
+          status: newStatus ? 1 : 0
+        })
+      });
+      if (res.ok) {
+        const responseData = await res.json();
+        if (responseData.success) {
+          setIsAiEnabled(newStatus);
+          message.success(`AI Agent ${newStatus ? 'enabled' : 'disabled'}`);
+        } else {
+          message.error(responseData.message || 'Failed to update AI status');
+        }
+      } else {
+        message.error('Failed to update AI status');
+      }
+    } catch (error) {
+      console.error('Error updating AI status:', error);
+      message.error('Failed to update AI status');
+    } finally {
+      setIsAiUpdating(false);
+    }
+  };
+
+  const toggleWidgetStatus = async () => {
+    const newStatus = !isWidgetEnabled;
+    setIsWidgetUpdating(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BASE_URI}/api/widgetToggle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          vendor_id: vendorId,
+          extension: newStatus ? 1 : 0
+        })
+      });
+      if (res.ok) {
+        const responseData = await res.json();
+        if (responseData.success || responseData.status || responseData.success === undefined) {
+          setIsWidgetEnabled(newStatus);
+          message.success(`Widget ${newStatus ? 'enabled' : 'disabled'}`);
+        } else {
+          message.error(responseData.message || 'Failed to update Widget status');
+        }
+      } else {
+        message.error('Failed to update Widget status');
+      }
+    } catch (error) {
+      console.error('Error updating Widget status:', error);
+      message.error('Failed to update Widget status');
+    } finally {
+      setIsWidgetUpdating(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px', marginBottom: '8px', paddingRight: '8px' }}>
+      <div 
+        onClick={!isAiUpdating ? toggleAiStatus : undefined}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          cursor: isAiUpdating ? 'not-allowed' : 'pointer',
+          padding: '6px 10px',
+          background: isAiEnabled ? '#f0fdf4' : '#f8fafc',
+          border: isAiEnabled ? '1px solid #16a34a' : '1px solid #e2e8f0',
+          borderRadius: '6px',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        <span style={{ fontSize: '9px', fontWeight: 600, color: isAiEnabled ? '#16a34a' : '#64748b' }}>Enable / Disable AI</span>
+        {isAiUpdating ? (
+          <SyncOutlined spin style={{ color: '#16a34a', fontSize: '12px' }} />
+        ) : (
+          <div style={{ 
+            width: '26px', 
+            height: '14px', 
+            borderRadius: '14px', 
+            background: isAiEnabled ? '#16a34a' : '#cbd5e1',
+            position: 'relative',
+            transition: 'all 0.2s ease',
+          }}>
+            <div style={{ 
+              position: 'absolute',
+              top: '1px',
+              left: isAiEnabled ? '13px' : '1px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#fff',
+              transition: 'all 0.2s ease',
+            }}></div>
+          </div>
+        )}
+      </div>
+
+      <div 
+        onClick={!isWidgetUpdating ? toggleWidgetStatus : undefined}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          cursor: isWidgetUpdating ? 'not-allowed' : 'pointer',
+          padding: '6px 10px',
+          background: isWidgetEnabled ? '#f0fdf4' : '#f8fafc',
+          border: isWidgetEnabled ? '1px solid #16a34a' : '1px solid #e2e8f0',
+          borderRadius: '6px',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        <span style={{ fontSize: '9px', fontWeight: 600, color: isWidgetEnabled ? '#16a34a' : '#64748b' }}>Enable / Disable Widget</span>
+        {isWidgetUpdating ? (
+          <SyncOutlined spin style={{ color: '#16a34a', fontSize: '12px' }} />
+        ) : (
+          <div style={{ 
+            width: '26px', 
+            height: '14px', 
+            borderRadius: '14px', 
+            background: isWidgetEnabled ? '#16a34a' : '#cbd5e1',
+            position: 'relative',
+            transition: 'all 0.2s ease',
+          }}>
+            <div style={{ 
+              position: 'absolute',
+              top: '1px',
+              left: isWidgetEnabled ? '13px' : '1px',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: '#fff',
+              transition: 'all 0.2s ease',
+            }}></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 
 const Sidebar = () => {
@@ -21,6 +213,15 @@ const Sidebar = () => {
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const activeIndex = sidebarItems.findIndex(item => 
+      item.hasSubmenu && item.submenu.some(sub => location.pathname === sub.path)
+    );
+    if (activeIndex !== -1) {
+      setOpenMenu(activeIndex);
+    }
+  }, [location.pathname]);
 
   const sidebarItems = [
     { icon: LayoutDashboard, text: 'Dashboard', path: '/dashboard' },
@@ -43,7 +244,14 @@ const Sidebar = () => {
     // { icon: Waypoints, text: 'Flow Messages', hasSubmenu: true, path: '#' },
     { icon: Layers, text: 'Templates', path: '/dashboard/whatsapp-templates' },
     { icon: Bot, text: 'Bot Flows', path: '/dashboard/bot/flows' },
-    { icon: Sparkles, text: 'AI Agent', path: '/dashboard/agent' },
+    {
+      icon: Sparkles, text: 'AI Agent', hasSubmenu: true, path: '/dashboard/agent', submenu: [
+        { text: 'Knowledge Base', path: '/dashboard/agent/knowledge', icon: Database },
+        { text: 'Actions', path: '/dashboard/agent/actions', icon: Zap },
+        { text: 'AI Stop Contacts', path: '/dashboard/agent/stop-contacts', icon: Clock },
+        { text: 'Widget Settings', path: '/dashboard/agent/widget', icon: SettingsIcon }
+      ]
+    },
     { icon: User, text: 'Subscription Plans', path: '/dashboard/subscription' },
     { icon: SyncOutlined, text: 'Products', path: '/dashboard/sync-products' },
     // { icon: SyncOutlined, text: 'Sync Customers', path: '/dashboard/sync-customers' },
@@ -174,22 +382,26 @@ const Sidebar = () => {
                     const isSubActive = location.pathname === sub.path;
 
                     return (
-                      <Link
-                        key={i}
-                        to={sub.path}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.4rem 0',
-                          fontSize: '0.9rem',
-                          color: isSubActive ? 'var(--wa-green)' : '#64748b',
-                          textDecoration: 'none'
-                        }}
-                      >
-                        {sub.icon && <sub.icon size={16} />}
-                        {sub.text}
-                      </Link>
+                      <div key={i}>
+                        <Link
+                          to={sub.path}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            padding: '0.4rem 0',
+                            fontSize: '0.9rem',
+                            color: isSubActive ? 'var(--wa-green)' : '#64748b',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          {sub.icon && <sub.icon size={16} />}
+                          {sub.text}
+                        </Link>
+                        {sub.path === '/dashboard/agent/widget' && isSubActive && (
+                          <WidgetTogglesInSidebar />
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -302,7 +514,7 @@ export default function DashboardLayout() {
   }, [navigate]);
 
   // Routes that should be full width without sidebar/topbar
-  const isFullWidthRoute = location.pathname === '/dashboard/agent' || location.pathname === '/dashboard/chatflow';
+  const isFullWidthRoute = location.pathname === '/dashboard/chatflow';
 
   useEffect(() => {
     const handleResize = () => {

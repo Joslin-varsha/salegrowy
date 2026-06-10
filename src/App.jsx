@@ -79,7 +79,8 @@ function App() {
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
           <Route path="subscription" element={<Subscription />} />
-          <Route path="agent" element={<AIAgent />} />
+          <Route path="agent" element={<Navigate to="/dashboard/agent/knowledge" replace />} />
+          <Route path="agent/:tab" element={<AIAgent />} />
           <Route path="chatflow" element={<FlowChatbotUI />} />
           <Route path="bot/flows" element={<BotFlows />} />
           <Route path="whatsapp-chat" element={<WhatsAppChat />} />
