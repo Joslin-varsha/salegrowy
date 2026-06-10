@@ -44,7 +44,75 @@ export default function MessageLog() {
         if (contentType && contentType.indexOf("application/json") !== -1) {
           const result = await response.json();
           if (result.success && result.data) {
-            setLogs(result.data);
+            const processedLogs = result.data.map(log => {
+              let isIncoming = false;
+              let fromPhone = '';
+
+              if (log.__data) {
+                try {
+                  const dataObj = typeof log.__data === 'string' ? JSON.parse(log.__data) : log.__data;
+                  if (dataObj.webhook_responses && dataObj.webhook_responses.incoming) {
+                    isIncoming = true;
+                    try {
+                      fromPhone = dataObj.webhook_responses.incoming[0].changes[0].value.messages[0].from;
+                    } catch(e) {}
+                  } else {
+                    isIncoming = false;
+                    try {
+                      const possibleStatuses = ['sent', 'delivered', 'read'];
+                      for (const status of possibleStatuses) {
+                        if (dataObj.webhook_responses && dataObj.webhook_responses[status] && dataObj.webhook_responses[status].length > 0) {
+                          fromPhone = dataObj.webhook_responses[status][0].changes[0].value.metadata.display_phone_number;
+                          if (fromPhone) break;
+                        }
+                      }
+                    } catch(e) {}
+                  }
+                } catch(e) {}
+              }
+
+              if (!fromPhone && isIncoming && log.phone_number) {
+                 fromPhone = log.phone_number;
+              }
+
+              let computedVia = '-';
+              if (isIncoming) {
+                computedVia = 'Customer';
+              } else {
+                if (log.campaign_name) {
+                  computedVia = `Campaign (${log.campaign_name})`;
+                } else if (log.__data) {
+                  try {
+                    const dataObj = typeof log.__data === 'string' ? JSON.parse(log.__data) : log.__data;
+                    if (dataObj.options) {
+                      if (dataObj.options.ai_bot_reply) {
+                         computedVia = 'AI Bot';
+                      } else if (dataObj.options.bot_reply) {
+                         computedVia = 'Auto Bot';
+                      } else {
+                         computedVia = 'Direct Message';
+                      }
+                    } else {
+                      computedVia = 'Direct Message';
+                    }
+                  } catch(e) {
+                      computedVia = 'Direct Message';
+                  }
+                } else {
+                  computedVia = 'Direct Message';
+                }
+              }
+
+              return {
+                ...log,
+                is_incoming_message: isIncoming,
+                computed_from: fromPhone || log.from_number || log.from || '-',
+                computed_type: isIncoming ? 'Incoming' : 'Outgoing',
+                computed_via: computedVia
+              };
+            });
+
+            setLogs(processedLogs);
             if (result.pagination) {
               setTotalRecords(result.pagination.total || result.recordsTotal || 0);
               setTotalPages(result.pagination.total_pages || 1);
@@ -52,7 +120,7 @@ export default function MessageLog() {
               setTotalRecords(result.recordsTotal);
               setTotalPages(Math.ceil(result.recordsTotal / entriesCount));
             } else {
-              setTotalRecords(result.data.length);
+              setTotalRecords(processedLogs.length);
               setTotalPages(1);
             }
           } else {
@@ -275,10 +343,22 @@ export default function MessageLog() {
                     {log.recipient || log.contact_id || log.to || log.phone_number}
                     {log.first_name ? <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.2rem' }}>{log.first_name} {log.last_name}</div> : null}
                   </td>
-                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{log.from_number || log.from || (log.is_incoming_message ? log.phone_number : 'System')}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{log.computed_from}</td>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-primary)' }}>{log.created_at ? new Date(log.created_at).toLocaleString() : log.time}</td>
-                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.type || (log.campaign_name ? 'Campaign' : 'Direct Message')}</td>
-                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.via || log.campaign_name || '-'}</td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <span style={{ 
+                      display: 'inline-block',
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      backgroundColor: log.computed_type === 'Incoming' ? '#dbeafe' : '#fef3c7',
+                      color: log.computed_type === 'Incoming' ? '#1d4ed8' : '#b45309'
+                    }}>
+                      {log.computed_type}
+                    </span>
+                  </td>
+                  <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{log.computed_via}</td>
                   <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     <span style={{ textTransform: 'capitalize', padding: '0.2rem 0.5rem', backgroundColor: log.status === 'read' ? '#dcfce7' : '#f1f5f9', color: log.status === 'read' ? '#16a34a' : '#64748b', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>
                       {log.status}
