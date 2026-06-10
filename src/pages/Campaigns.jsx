@@ -75,17 +75,27 @@ export default function Campaigns() {
     fetchCampaigns();
   }, [currentPage, entriesCount, activeTab]);
 
-  const handleArchive = (id) => {
+  const handleArchive = async (id) => {
     const action = activeTab === 'Archive' ? 'unarchive' : 'archive';
     if (!window.confirm(`Do you want to ${action} this campaign?`)) return;
-    const updated = [...campaigns];
-    const index = updated.findIndex(c => (c._id || c.id) === id);
-    if (index !== -1) {
-      const newStatus = activeTab === 'Archive' ? 'active' : 'archived';
-      if (updated[index].campaign_status !== undefined) updated[index].campaign_status = newStatus;
-      else if (updated[index].status !== undefined) updated[index].status = newStatus;
-      else updated[index].status = newStatus;
-      setCampaigns(updated);
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/campaign/${action}/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const result = await response.json();
+      if (result.success || response.ok) {
+        setCampaigns(campaigns.filter(c => (c._id || c.id) !== id));
+      } else {
+        alert(result.message || `Failed to ${action} campaign`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Error occurred while trying to ${action} campaign`);
     }
   };
 

@@ -73,6 +73,7 @@ function App() {
           <Route path="contacts/groups" element={<ContactGroups />} />
           <Route path="contacts/labels" element={<Labels />} />
           <Route path="contacts/create" element={<CreateContact />} />
+          <Route path="contacts/edit/:id" element={<CreateContact />} />
           <Route path="whatsapp-templates" element={<WhatsAppTemplates />} />
           <Route path="whatsapp-templates/create" element={<CreateWhatsAppTemplate />} />
           <Route path="settings" element={<Settings />} />

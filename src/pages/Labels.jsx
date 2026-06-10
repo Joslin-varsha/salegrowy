@@ -116,28 +116,50 @@ export default function Labels() {
     setCreating(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels/update/${editingLabel._id || editingLabel.id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(editingLabel)
+        body: JSON.stringify({
+          title: editingLabel.title,
+          text_color: editingLabel.text_color,
+          bg_color: editingLabel.bg_color
+        })
       });
-      if (response.ok) {
+      const result = await response.json();
+      if (result.success || response.ok) {
         setShowEditModal(false);
         fetchLabels();
       } else {
-        const updated = labels.map(l => (l._id === editingLabel._id || l.id === editingLabel.id) ? editingLabel : l);
-        setLabels(updated);
-        setShowEditModal(false);
+        alert(result.message || 'Error updating label');
       }
     } catch (err) {
       console.error(err);
-      const updated = labels.map(l => (l._id === editingLabel._id || l.id === editingLabel.id) ? editingLabel : l);
-      setLabels(updated);
-      setShowEditModal(false);
+      alert('Error updating label');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteLabel = async (id) => {
+    if (!window.confirm("Delete this label?")) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels/delete/${id}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      if (result.success || response.ok) {
+        fetchLabels();
+      } else {
+        alert(result.message || 'Error deleting label');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting label');
     }
   };
 
@@ -277,7 +299,7 @@ export default function Labels() {
                           <button onClick={() => { setEditingLabel(label); setShowEditModal(true); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
                             <Edit size={14} strokeWidth={2} /> Edit
                           </button>
-                          <button onClick={() => { if (window.confirm("Delete this label?")) setLabels(labels.filter((_, i) => i !== idx)); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                          <button onClick={() => deleteLabel(label._id || label.id)} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
                             <Trash2 size={14} strokeWidth={2} /> Delete
                           </button>
                         </div>

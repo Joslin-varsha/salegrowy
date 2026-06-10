@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { X, ChevronDown } from 'lucide-react';
 
 
@@ -23,8 +23,13 @@ export default function CreateContact() {
 
   const [errors, setErrors] = useState({});
   const [groups, setGroups] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [labels, setLabels] = useState([]);
 
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
+  const passedContact = location.state?.contact;
 
   const [tagInputs, setTagInputs] = useState(['']);
 
@@ -69,10 +74,12 @@ export default function CreateContact() {
     if (!formData.firstName) newErrors.firstName = "First name required";
     if (!formData.lastName) newErrors.lastName = "Last name required";
 
-    if (!formData.mobile) {
-      newErrors.mobile = "Mobile required";
-    } else if (!/^[0-9]{12}$/.test(formData.mobile)) {
-      newErrors.mobile = "Must be 12 digits with country code";
+    if (!id) {
+      if (!formData.mobile) {
+        newErrors.mobile = "Mobile required";
+      } else if (!/^[0-9]{12}$/.test(formData.mobile)) {
+        newErrors.mobile = "Must be 12 digits with country code";
+      }
     }
 
     if (!formData.email) {
@@ -111,8 +118,12 @@ export default function CreateContact() {
       // ✅ Get unique tags from form data
       const uniqueTags = [...new Set(tagsArray)];
 
-      // ✅ STEP 4: Create contact
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/add`, {
+      // ✅ STEP 4: Create or update contact
+      const url = id 
+        ? `${import.meta.env.VITE_API_URL}/api/contact/update/${id}`
+        : `${import.meta.env.VITE_API_URL}/api/contact/add`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,11 +135,12 @@ export default function CreateContact() {
           language_code: formData.language,
           phone_number: formData.mobile,
           email: formData.email,
-          whatsapp_opt_out: "0",
+          whatsapp_opt_out: optOut ? "1" : "0",
           disable_ai_bot: "0",
-          countries__id: "91",
-          contact_tags: [],
-          newTag: uniqueTags, // Passing the user-inputted tags here
+          countries__id: formData.country || "91",
+          contact_tags: id ? uniqueTags : [],
+          newTag: uniqueTags,
+          groups: formData.groups,
           contact_groups: [formData.groups],
           custom_input_fields: {}
         })
@@ -137,7 +149,7 @@ export default function CreateContact() {
       const result = await response.json();
 
       if (result.success) {
-        alert("Contact Added Successfully ✅");
+        alert(`Contact ${id ? 'Updated' : 'Added'} Successfully ✅`);
         navigate('/dashboard/contacts');
       } else {
         alert(result.message);
@@ -153,9 +165,12 @@ export default function CreateContact() {
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
+      },
+      body: JSON.stringify({ page: 1, limit: 100 })
     })
       .then(res => res.json())
       .then(data => {
@@ -163,7 +178,74 @@ export default function CreateContact() {
           setGroups(data.data);
         }
       });
-  }, []);
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ page: 1, limit: 100 })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setLabels(data.data);
+        }
+      });
+
+    fetch(`${import.meta.env.VITE_API_URL}/api/contact/countries`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('GET failed');
+        return res.json();
+      })
+      .then(data => {
+        if (data.success) setCountries(data.data);
+        else if (Array.isArray(data)) setCountries(data);
+      })
+      .catch(() => {
+        fetch(`${import.meta.env.VITE_API_URL}/api/contact/countries`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) setCountries(data.data);
+          else if (Array.isArray(data)) setCountries(data);
+        }).catch(console.error);
+      });
+
+    if (id && passedContact) {
+      const contact = passedContact;
+      setFormData({
+        firstName: contact.first_name || contact.first_Name || '',
+        lastName: contact.last_name || contact.last_Name || '',
+        country: contact.countries__id || '',
+        mobile: contact.phone_number || '',
+        language: contact.language_code || '',
+        email: contact.email || '',
+        groups: (contact.contact_groups && contact.contact_groups[0]) || (Array.isArray(contact.groups) ? (typeof contact.groups[0] === 'object' ? contact.groups[0]._id : contact.groups[0]) : (contact.groups || '')),
+        tags: contact.contact_tags ? (typeof contact.contact_tags === 'string' ? contact.contact_tags.split(',') : contact.contact_tags) : (contact.tags ? (typeof contact.tags === 'string' ? contact.tags.split(',') : contact.tags) : []),
+        address: contact.address || '',
+        website: contact.website || ''
+      });
+      
+      let parsedTags = contact.contact_tags ? (typeof contact.contact_tags === 'string' ? contact.contact_tags.split(',') : contact.contact_tags) : (contact.tags ? (typeof contact.tags === 'string' ? contact.tags.split(',') : contact.tags) : []);
+      if (parsedTags.length > 0) {
+        setTagInputs(parsedTags);
+      }
+      setOptOut(contact.whatsapp_opt_out === "1" || contact.whatsapp_opt_out === 1 || contact.marketing === 'Opted Out' || contact.whatsapp_opt_out_text === 'Opted Out');
+    }
+  }, [id, passedContact]);
 
   return (
     <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 120px)' }}>
@@ -171,7 +253,7 @@ export default function CreateContact() {
 
         {/* Header */}
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Add New Contact</h2>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{id ? 'Edit Contact' : 'Add New Contact'}</h2>
           <button
             onClick={() => navigate('/dashboard/contacts')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
@@ -216,8 +298,11 @@ export default function CreateContact() {
                 <div style={{ position: 'relative' }}>
                   <select className="form-input" name="country" value={formData.country} onChange={handleChange} style={{ padding: '0.5rem 0.75rem', appearance: 'none', backgroundColor: '#ffffff' }}>
                     <option value="">Select</option>
-                    <option>United States</option>
-                    <option>India</option>
+                    {countries.map((c, i) => (
+                      <option key={i} value={c._id || c.id || c.name || c.country_name || c}>
+                        {c.name || c.country_name || c.title || c.country || c}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
                 </div>
@@ -227,7 +312,9 @@ export default function CreateContact() {
                 <label className="form-label" style={{ fontSize: '0.8rem' }}>Mobile Number</label>
                 <input type="text" className="form-input" name="mobile"
                   value={formData.mobile}
-                  onChange={handleChange} style={{ padding: '0.5rem 0.75rem' }} />
+                  onChange={handleChange} 
+                  disabled={!!id}
+                  style={{ padding: '0.5rem 0.75rem', backgroundColor: id ? '#f1f5f9' : '#ffffff', cursor: id ? 'not-allowed' : 'text' }} />
                 {errors.mobile && (
                   <div style={{ color: 'red', fontSize: '0.75rem' }}>
                     {errors.mobile}
@@ -301,14 +388,19 @@ export default function CreateContact() {
                 {tagInputs.map((tag, index) => (
                   <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
 
-                    <input
-                      type="text"
+                    <select
                       className="form-input"
-                      placeholder={index === 0 ? "Enter tag" : "Another tag"}
                       value={tag}
                       onChange={(e) => handleTagChange(index, e.target.value)}
-                      style={{ padding: '0.5rem 0.75rem' }}
-                    />
+                      style={{ padding: '0.5rem 0.75rem', appearance: 'auto', backgroundColor: '#ffffff', flex: 1 }}
+                    >
+                      <option value="">Select Label</option>
+                      {labels.map((l, i) => (
+                        <option key={i} value={l._id || l.id || l.title || l}>
+                          {l.title || l.name || l}
+                        </option>
+                      ))}
+                    </select>
 
                     {index > 0 && (
                       <button

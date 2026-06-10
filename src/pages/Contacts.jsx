@@ -132,9 +132,32 @@ export default function Contacts() {
     return pages;
   };
 
-  const deleteSelected = (index) => {
-    const updated = contacts.filter((_, i) => i !== index);
-    setContacts(updated);
+  const deleteSelected = async (index) => {
+    const contact = contacts[index];
+    if (!contact) return;
+    const id = contact._id || contact.id || contact._uid;
+    
+    if (!window.confirm("Are you sure you want to delete this contact?")) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/delete/${id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      
+      if (result.success || response.ok) {
+        const updated = contacts.filter((_, i) => i !== index);
+        setContacts(updated);
+      } else {
+        alert(result.message || "Failed to delete contact");
+      }
+    } catch (err) {
+      console.error("Error deleting contact:", err);
+      alert("An error occurred while deleting the contact");
+    }
   };
 
   const deleteBulk = () => {
@@ -371,7 +394,7 @@ export default function Contacts() {
                         <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#1e293b' }} onClick={() => { handleView(contact); setActionMenuOpen(null); }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                           <Info size={14} /> Details
                         </button>
-                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#1e293b' }} onClick={() => setActionMenuOpen(null)} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                        <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#1e293b' }} onClick={() => { navigate('/dashboard/contacts/edit/' + (contact._id || contact.id), { state: { contact } }); setActionMenuOpen(null); }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                           <Edit size={14} /> Edit
                         </button>
                         <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.6rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#f43f5e', borderTop: '1px solid #f1f5f9' }} onClick={() => { deleteSelected(idx); setActionMenuOpen(null); }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8d7da'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>

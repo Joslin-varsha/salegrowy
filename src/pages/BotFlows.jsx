@@ -43,7 +43,8 @@ export default function BotFlows() {
             trigger: bot.start_trigger || '-',
             status: bot.status === 1 ? 'Active' : 'Inactive',
             uid: bot._uid,
-            vendorUid: bot.vendorUid
+            vendorUid: bot.vendorUid,
+            webhookUrl: bot.reply_webhook_url || ''
           }));
 
           setFlowsData(formatted);
@@ -97,7 +98,7 @@ export default function BotFlows() {
         id: flow.id,
         title: flow.title,
         trigger: flow.trigger,
-        webhookUrl: '', // Webhook URL isn't in mock data but added for form
+        webhookUrl: flow.webhookUrl || '',
         status: flow.status
       });
     } else {
@@ -128,7 +129,7 @@ export default function BotFlows() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (modalMode === 'add') {
       const newFlow = {
@@ -138,14 +139,58 @@ export default function BotFlows() {
         status: formData.status
       };
       setFlowsData([newFlow, ...flowsData]);
+      handleCloseModal();
     } else {
-      setFlowsData(flowsData.map(f =>
-        f.id === formData.id
-          ? { ...f, title: formData.title, trigger: formData.trigger, status: formData.status }
-          : f
-      ));
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/bot/update/${formData.id}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            title: formData.title,
+            start_trigger: formData.trigger,
+            reply_webhook_url: formData.webhookUrl
+          })
+        });
+        const result = await response.json();
+        if (result.success || response.ok) {
+          setFlowsData(flowsData.map(f =>
+            f.id === formData.id
+              ? { ...f, title: formData.title, trigger: formData.trigger, webhookUrl: formData.webhookUrl, status: formData.status }
+              : f
+          ));
+          handleCloseModal();
+        } else {
+          alert(result.message || 'Error updating bot flow');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error updating bot flow');
+      }
     }
-    handleCloseModal();
+  };
+
+  const deleteBotFlow = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this bot flow?")) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/bot/delete/${id}`, {
+        method: 'POST', // standard in this project, but we use it since most deletes are POST
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      if (result.success || response.ok) {
+        setFlowsData(flowsData.filter(f => f.id !== id));
+      } else {
+        alert(result.message || 'Error deleting bot flow');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting bot flow');
+    }
   };
 
   const filteredFlows = flowsData.filter(flow =>
@@ -280,7 +325,7 @@ export default function BotFlows() {
                       >
                         <Edit size={14} /> Edit
                       </button>
-                      <button style={{
+                      <button onClick={() => deleteBotFlow(flow.id)} style={{
                         backgroundColor: '#ef4444',
                         color: 'white',
                         border: 'none',

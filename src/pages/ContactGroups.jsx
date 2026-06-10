@@ -16,7 +16,6 @@ export default function ContactGroups() {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState([]);
   const [showBulkDropdown, setShowBulkDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState('active'); // Added tab state
   const [searchTerm, setSearchTerm] = useState(''); // Added search state
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -34,26 +33,9 @@ export default function ContactGroups() {
     setShowBulkDropdown(false);
   };
 
-  const archiveBulk = () => {
-    if (selected.length === 0) return;
-
-    // Mark selected groups as archived
-    const updatedGroups = groups.map((group, i) => {
-      if (selected.includes(i)) {
-        return { ...group, isArchived: activeTab === 'active' };
-      }
-      return group;
-    });
-
-    setGroups(updatedGroups);
-    setSelected([]);
-    setShowBulkDropdown(false);
-  };
-
   const fetchGroups = async () => {
     try {
-      const endpoint = activeTab === 'archive' ? '/api/contact/groups/archived' : '/api/contact/groups';
-      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -90,7 +72,7 @@ export default function ContactGroups() {
 
   useEffect(() => {
     fetchGroups();
-  }, [currentPage, entriesCount, activeTab]);
+  }, [currentPage, entriesCount]);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -146,7 +128,7 @@ export default function ContactGroups() {
     setCreating(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups/update/${editingGroup._id || editingGroup.id}`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
@@ -156,23 +138,39 @@ export default function ContactGroups() {
           description: editingGroup.description
         })
       });
-      if (response.ok) {
+      const result = await response.json();
+      if (result.success || response.ok) {
         setShowEditModal(false);
         fetchGroups();
       } else {
-        // Local update fallback if API fails during test
-        const updated = groups.map(g => (g._id === editingGroup._id || g.id === editingGroup.id) ? editingGroup : g);
-        setGroups(updated);
-        setShowEditModal(false);
+        alert(result.message || 'Error updating group');
       }
     } catch (err) {
       console.error(err);
-      // Local update fallback
-      const updated = groups.map(g => (g._id === editingGroup._id || g.id === editingGroup.id) ? editingGroup : g);
-      setGroups(updated);
-      setShowEditModal(false);
+      alert('Error updating group');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteGroup = async (id) => {
+    if (!window.confirm("Delete this group?")) return;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups/delete/${id}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const result = await response.json();
+      if (result.success || response.ok) {
+        fetchGroups();
+      } else {
+        alert(result.message || 'Error deleting group');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting group');
     }
   };
 
@@ -186,49 +184,6 @@ export default function ContactGroups() {
         </h1>
         <button onClick={() => setShowCreateModal(true)} style={{ backgroundColor: '#31C653', color: 'white', border: 'none', borderRadius: '4px', padding: '0.6rem 1.25rem', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 4px rgba(49,198,83,0.2)' }}>
           Add New Group
-        </button>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-        <button
-          onClick={() => { setActiveTab('active'); setSelected([]); }}
-          style={{
-            padding: '0.75rem 2rem',
-            border: activeTab === 'active' ? '1px solid #e2e8f0' : 'none',
-            borderBottom: activeTab === 'active' ? 'none' : 'none',
-            backgroundColor: activeTab === 'active' ? '#ffffff' : '#e2e8f0',
-            color: activeTab === 'active' ? '#64748b' : '#94a3b8',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            borderTopLeftRadius: '4px',
-            borderTopRightRadius: '4px',
-            cursor: 'pointer',
-            zIndex: 1,
-            position: 'relative',
-            top: activeTab === 'active' ? '1px' : '0'
-          }}
-        >
-          Active
-        </button>
-        <button
-          onClick={() => { setActiveTab('archive'); setSelected([]); }}
-          style={{
-            padding: '0.75rem 2rem',
-            border: activeTab === 'archive' ? '1px solid #e2e8f0' : 'none',
-            borderBottom: activeTab === 'archive' ? 'none' : 'none',
-            backgroundColor: activeTab === 'archive' ? '#ffffff' : '#e2e8f0',
-            color: activeTab === 'archive' ? '#64748b' : '#94a3b8',
-            fontWeight: 600,
-            fontSize: '0.9rem',
-            cursor: 'pointer',
-            borderTopRightRadius: '4px',
-            borderTopLeftRadius: activeTab === 'archive' ? '4px' : '0',
-            position: 'relative',
-            top: activeTab === 'archive' ? '1px' : '0'
-          }}
-        >
-          Archive
         </button>
       </div>
 
@@ -266,9 +221,6 @@ export default function ContactGroups() {
                 <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: '0.5rem', backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10, minWidth: '150px' }}>
                   <button onClick={deleteBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
                     Delete Selected
-                  </button>
-                  <button onClick={archiveBulk} style={{ display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.85rem', color: '#1e293b' }} onMouseEnter={e => e.target.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}>
-                    {activeTab === 'active' ? 'Archive Selected' : 'Unarchive Selected'}
                   </button>
                 </div>
               )}
@@ -346,10 +298,7 @@ export default function ContactGroups() {
                           <button onClick={() => { setEditingGroup(group); setShowEditModal(true); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#3b82f6'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
                             <Edit size={14} strokeWidth={2} /> Edit
                           </button>
-                          <button onClick={() => { const updated = groups.map((g, i) => i === idx ? { ...g, isArchived: !g.isArchived } : g); setGroups(updated); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
-                            <Archive size={14} strokeWidth={2} /> {activeTab === 'archive' ? 'Unarchive' : 'Archive'}
-                          </button>
-                          <button onClick={() => { if (window.confirm("Delete this group?")) setGroups(groups.filter((_, i) => i !== idx)); }} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
+                          <button onClick={() => deleteGroup(group._id || group.id)} style={{ backgroundColor: 'transparent', color: '#64748b', border: 'none', padding: '0.25rem', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.color = '#ef4444'} onMouseLeave={e => e.currentTarget.style.color = '#64748b'}>
                             <Trash2 size={14} strokeWidth={2} /> Delete
                           </button>
                         </div>

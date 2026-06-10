@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles} from 'lucide-react';
+import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles, Tag} from 'lucide-react';
 import { SyncOutlined } from '@ant-design/icons';
 
 
@@ -35,9 +35,9 @@ const Sidebar = () => {
     // { icon: Wallet, text: 'Wallet', path: '#' },
     {
       icon: Users, text: 'Contacts', hasSubmenu: true, path: '/dashboard/contacts', submenu: [
-        { text: 'Lists', path: '/dashboard/contacts' },
-        { text: 'Groups', path: '/dashboard/contacts/groups' },
-        { text: 'Labels', path: '/dashboard/contacts/labels' }
+        { text: 'Lists', path: '/dashboard/contacts', icon: List },
+        { text: 'Groups', path: '/dashboard/contacts/groups', icon: Users },
+        { text: 'Labels', path: '/dashboard/contacts/labels', icon: Tag }
       ]
     },
     // { icon: Waypoints, text: 'Flow Messages', hasSubmenu: true, path: '#' },
@@ -178,13 +178,16 @@ const Sidebar = () => {
                         key={i}
                         to={sub.path}
                         style={{
-                          display: 'block',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
                           padding: '0.4rem 0',
                           fontSize: '0.9rem',
                           color: isSubActive ? 'var(--wa-green)' : '#64748b',
                           textDecoration: 'none'
                         }}
                       >
+                        {sub.icon && <sub.icon size={16} />}
                         {sub.text}
                       </Link>
                     );
