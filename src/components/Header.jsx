@@ -39,10 +39,10 @@ export default function Header() {
 
         {/* Navigation links */}
         <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }} className="nav-links">
-          <Link to="#" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Features</Link>
-          <Link to="#" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Pricing</Link>
-          <Link to="#" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Contact</Link>
-          <Link to="#" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Privacy Policy</Link>
+          <Link to="/features" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Features</Link>
+          <Link to="/pricing" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Pricing</Link>
+          <Link to="/contact" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Contact</Link>
+          <Link to="/privacy-policy" style={{ color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>Privacy Policy</Link>
         </nav>
 
         {/* Auth Buttons */}

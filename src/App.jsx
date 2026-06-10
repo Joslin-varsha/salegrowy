@@ -31,6 +31,10 @@ import WhatsAppChat from './pages/WhatsAppChat';
 import SyncProducts from "./pages/SyncProducts";
 import SyncCustomers from "./pages/SyncCustomers";
 import Webhooks from "./pages/Webhooks";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ContactUs from "./pages/ContactUs";
+import Pricing from "./pages/Pricing";
+import Features from "./pages/Features";
 
 // Redirects logged-in users away from login/register pages
 function PublicRoute() {
@@ -61,6 +65,10 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/register" element={<RegisterVendor />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/features" element={<Features />} />
         </Route>
 
         {/* Dashboard routes */}
