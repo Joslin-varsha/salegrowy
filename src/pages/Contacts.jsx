@@ -20,6 +20,8 @@ export default function Contacts() {
   const [selected, setSelected] = useState([]);
   const [showBulkDropdown, setShowBulkDropdown] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
   const [groups, setGroups] = useState([]);
   const [labels, setLabels] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState('');
@@ -254,6 +256,65 @@ export default function Contacts() {
   };
 
 
+  const handleExport = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/export`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      if (!response.ok) throw new Error("Export failed");
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contacts_export.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Error exporting contacts");
+    }
+  };
+
+  const handleImport = async (file) => {
+    if (!file) return;
+    setImportLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/import`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+      
+      const result = await response.json();
+      if (result.success || response.ok) {
+        alert("Contacts imported successfully!");
+        setCurrentPage(1);
+        fetchContacts();
+      } else {
+        alert(result.message || "Failed to import contacts");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error importing contacts");
+    } finally {
+      setImportLoading(false);
+      const fileInput = document.getElementById('hiddenFileInput');
+      if (fileInput) fileInput.value = '';
+    }
+  };
+
+
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredContacts = contacts.filter(contact =>
@@ -294,14 +355,25 @@ export default function Contacts() {
           <button
             className="btn btn-primary"
             style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
+            onClick={() => setShowExportModal(true)}
           >
             Export Contacts
           </button>
+          
+          <input 
+            type="file" 
+            id="hiddenFileInput"
+            accept=".csv" 
+            style={{ display: 'none' }} 
+            onChange={(e) => handleImport(e.target.files[0])}
+          />
           <button
             className="btn btn-primary"
-            style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600 }}
+            style={{ width: 'auto', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            onClick={() => document.getElementById('hiddenFileInput').click()}
+            disabled={importLoading}
           >
-            Import Contacts
+            {importLoading ? <><RefreshCw size={14} className="animate-spin" /> Importing...</> : 'Import Contacts'}
           </button>
         </div>
       </div>
@@ -654,6 +726,54 @@ export default function Contacts() {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Export Options Modal */}
+      {showExportModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, backdropFilter: 'blur(2px)' }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '8px', width: '450px', maxWidth: '90%', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+
+            {/* Modal Header */}
+            <div style={{ padding: '1rem 1.5rem', backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#475569', fontWeight: 600 }}>Export Options</h3>
+              <button
+                onClick={() => setShowExportModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '2rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              
+              <div style={{ border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '8px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1rem' }}>Sample Template</h4>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>Download a blank template to see the required format for importing.</p>
+                <a 
+                  href="/sample_contacts.xlsx" 
+                  download="sample_contacts.xlsx"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.5rem', background: 'white', color: '#25D366', border: '1px solid #25D366', borderRadius: '6px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}
+                  onClick={() => setShowExportModal(false)}
+                >
+                  <Download size={14} /> Download Sample Excel
+                </a>
+              </div>
+
+              <div style={{ border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '8px', textAlign: 'center' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1rem' }}>Export Data</h4>
+                <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>Download a complete list of your current contacts.</p>
+                <button
+                  onClick={() => { handleExport(); setShowExportModal(false); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1.5rem', background: '#25D366', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}
+                >
+                  <Download size={14} /> Export All Contacts
+                </button>
+              </div>
+
+            </div>
           </div>
         </div>
       )}

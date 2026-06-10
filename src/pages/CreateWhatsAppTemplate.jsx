@@ -39,6 +39,7 @@ export default function CreateWhatsAppTemplate() {
   const bodyTextRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [showAllButtons, setShowAllButtons] = useState(false);
+  const [languages, setLanguages] = useState([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -135,6 +136,34 @@ export default function CreateWhatsAppTemplate() {
       fetchTemplate();
     }
   }, [editTemplateId, isEditMode]);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/languages`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const result = await response.json();
+        if (result.success && result.data && Array.isArray(result.data)) {
+          const parsedLangs = result.data.map(item => {
+            if (typeof item === 'string') return { code: item, name: item };
+            return {
+              code: item.code || item.language || item.id || '',
+              name: item.name || item.language_name || item.title || item.code || item.language || ''
+            };
+          }).filter(l => l.code);
+          
+          if (parsedLangs.length > 0) {
+            setLanguages(parsedLangs);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch languages:", err);
+      }
+    };
+    fetchLanguages();
+  }, []);
 
 
   const [headerFile, setHeaderFile] = useState(null);
@@ -329,8 +358,9 @@ export default function CreateWhatsAppTemplate() {
           <div className="form-group">
             <label className="form-label-gray">Template Language Code</label>
             <select name="language" className="form-input-white" value={formData.language} onChange={handleChange} disabled={isEditMode} style={{ backgroundColor: isEditMode ? '#f1f5f9' : 'white', cursor: isEditMode ? 'not-allowed' : 'pointer' }}>
-              <option value="en">English (en)</option>
-              <option value="hi">Hindi (hi)</option>
+              {languages.map((lang, idx) => (
+                <option key={idx} value={lang.code}>{lang.name}</option>
+              ))}
             </select>
           </div>
 
