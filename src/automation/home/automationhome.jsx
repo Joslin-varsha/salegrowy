@@ -996,8 +996,10 @@ export default function Automations() {
             return true;
         }
         if (step === 2) {
-            // 2. Conditions (Optional)
+            // 2. Conditions (Optional) — if all conditions are blank, it's still valid (no conditions = no filter)
             const noValueOperators = ["exists", "not_exists", "is_empty", "is", "is_not", "does_not_exist"];
+            const allEmpty = form.conditions.every(cond => !cond.field && !cond.operator);
+            if (allEmpty) return true; // Allow skipping with no conditions
             return form.conditions.every(cond => {
                 if (!cond.field || !cond.operator) return false;
                 if (!noValueOperators.includes(cond.operator) && !cond.value?.toString().trim()) return false;
@@ -1205,6 +1207,14 @@ export default function Automations() {
     const handleSaveStep2 = async () => {
         try {
             setSavingStep2(true);
+
+            // If all conditions are blank (no field selected), skip saving and proceed
+            const allEmpty = form.conditions.every(cond => !cond.field && !cond.operator);
+            if (allEmpty) {
+                setCurrentStep(3);
+                return;
+            }
+
             const apiConditions = form.conditions.map(condition => {
                 const apiCond = {
                     condition_master_id: condition.conditionMasterId || 1,
@@ -2385,7 +2395,7 @@ export default function Automations() {
                         )}
 
                         <div className="flex items-center gap-2">
-                            {(editingId || currentStep > 1) && currentStep < 4 && (
+                            {currentStep > 1 && currentStep < 4 && (
                                 <Button
                                     variant="ghost"
                                     onClick={() => setCurrentStep(prev => prev + 1)}

@@ -106,11 +106,19 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
   const [headerMediaPreview, setHeaderMediaPreview] = useState(null);
   const [leadStages, setLeadStages] = useState([]);
   const [leadStagesLoading, setLeadStagesLoading] = useState(false);
+  const [VENDOR_ID, setVendorId] = useState(null);
+
+  useEffect(() => {
+    getVendorId().then(id => {
+      if (id) setVendorId(id);
+    });
+  }, []);
 
   // Fetch column data for dropdown options
   const fetchColumnData = () => {
+    if (!VENDOR_ID) return;
     const payload = {
-      vendorId: VENDOR_UID,
+      vendorId: VENDOR_ID,
     };
 
     fetch(`${BASE_URI}/api/getContactDataMaps`, {
@@ -145,9 +153,11 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
   };
 
   useEffect(() => {
-    fetchColumnData();
-    fetchLeadStages();
-  }, []);
+    if (VENDOR_ID) {
+      fetchColumnData();
+      fetchLeadStages();
+    }
+  }, [VENDOR_ID]);
 
   // Fetch lead stages from API
   const fetchLeadStages = async () => {
@@ -172,12 +182,13 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
   // Fetch templates from API
   useEffect(() => {
     const fetchTemplates = async () => {
-      if (!VENDOR_UID) return;
+      if (!VENDOR_ID) return;
 
       try {
         setTemplatesLoading(true);
         const response = await axios.post(`${BASE_URI}/api/templatelistflow`, {
-          vendorUId: VENDOR_UID,
+          vendorId: VENDOR_ID,
+          vendorUId: VENDOR_ID,
         });
         if (response.data.success && response.data.data) {
           setTemplateLoading(false);
@@ -206,7 +217,7 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
     };
 
     fetchTemplates();
-  }, [VENDOR_UID]);
+  }, [VENDOR_ID]);
 
   // Fetch users from API
   useEffect(() => {
@@ -243,7 +254,7 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
   // Fetch actions from API
   useEffect(() => {
     const fetchActions = async () => {
-      if (!triggerMasterId) return;
+      if (!triggerMasterId || !VENDOR_ID) return;
 
       try {
         setActionsLoading(true);
@@ -290,7 +301,7 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
     };
 
     fetchActions();
-  }, [triggerMasterId]);
+  }, [triggerMasterId, VENDOR_ID]);
 
   // Sync actionMasterId if it's missing but we have a type
   useEffect(() => {
