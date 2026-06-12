@@ -178,7 +178,7 @@ function CallModal({ lead, onClose, onSave }) {
     };
 
     try {
-      const response = await fetch(`${BASE_URI}add-lead-calls`, {
+      const response = await fetch(`${BASE_URI}/api/add-lead-calls`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -400,7 +400,7 @@ function NoteModal({ lead, onClose, onSave }) {
     };
 
     try {
-      const response = await fetch(`${BASE_URI}add-lead-notes`, {
+      const response = await fetch(`${BASE_URI}/api/add-lead-notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -523,7 +523,7 @@ function FollowUpModal({ lead, onClose, onSave }) {
     }
 
     try {
-      const response = await fetch(`${BASE_URI}add-lead-followup`, {
+      const response = await fetch(`${BASE_URI}/api/add-lead-followup`, {
         method: "POST",
         body: formData // Don't set Content-Type header for FormData
       });
@@ -771,7 +771,7 @@ function AddLeadModal({ onClose, onSave, stageOptions = [], sourceOptions = [], 
     setError("");
 
     try {
-      const response = await fetch(`${BASE_URI}add-lead`, {
+      const response = await fetch(`${BASE_URI}/api/add-lead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1067,7 +1067,7 @@ function AddStageModal({ onClose, onSave }) {
     setError("");
 
     try {
-      const response = await fetch(`${BASE_URI}add-menus`, {
+      const response = await fetch(`${BASE_URI}/api/add-menus`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1164,7 +1164,7 @@ function DeleteStageModal({ stage, onClose, onSave }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URI}deleteStage`, {
+      const response = await fetch(`${BASE_URI}/api/deleteStage`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1239,7 +1239,7 @@ function DeleteLeadModal({ lead, onClose, onSave }) {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URI}deleteLead`, {
+      const response = await fetch(`${BASE_URI}/api/deleteLead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1349,7 +1349,7 @@ function CustomFieldModal({ onClose }) {
 
     setIsAdding(true);
     try {
-      const url = editingField ? `${BASE_URI}updateLeadCustomFields` : `${BASE_URI}addLeadCustomFields`;
+      const url = editingField ? `${BASE_URI}/api/updateLeadCustomFields` : `${BASE_URI}/api/addLeadCustomFields`;
       const body = {
         vendorId: VENDOR_ID,
         lead_custom_field_name: fieldName.trim(),
@@ -1397,7 +1397,7 @@ function CustomFieldModal({ onClose }) {
   const handleDeleteField = async (id) => {
     if (!window.confirm("Are you sure you want to delete this field?")) return;
     try {
-      const response = await fetch(`${BASE_URI}deleteLeadCustomFields`, {
+      const response = await fetch(`${BASE_URI}/api/deleteLeadCustomFields`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendorId: VENDOR_ID, fieldId: id })
@@ -2078,7 +2078,7 @@ function ArrangeOrderModal({ onClose, onSave }) {
         return `${stage.id}-${index + 1}`;
       }).join(',');
 
-      const response = await fetch(`${BASE_URI}filter-leads`, {
+      const response = await fetch(`${BASE_URI}/api/filter-leads`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2372,7 +2372,7 @@ export default function LeadPiplineleadpage() {
       form.append("menuId", stages.find(s => s.name === stageName)?.id || '');
       form.append("page", stagePagination.current_page + 1);
 
-      const res = await fetch(`${BASE_URI}menu-pagination`, { method: "POST", body: form });
+      const res = await fetch(`${BASE_URI}/api/menu-pagination`, { method: "POST", body: form });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
 
@@ -2458,7 +2458,7 @@ export default function LeadPiplineleadpage() {
       const stageId = toStageObj ? toStageObj.id : toStage;
       console.log("Moving lead:", lead);
       // Call the update-lead-status API
-      const response = await fetch(`${BASE_URI}update-lead-status`, {
+      const response = await fetch(`${BASE_URI}/api/update-lead-status`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2502,14 +2502,6 @@ export default function LeadPiplineleadpage() {
       >
         <div className="mx-auto px-2 sm:px-4 py-2 flex items-center justify-between gap-1 sm:gap-4 flex-nowrap overflow-hidden">
           <div className="flex items-center gap-2 sm:gap-6 flex-nowrap flex-shrink-0">
-            <button
-              onClick={() => window.history.back()}
-              className="p-1 px-2 rounded-md hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1 font-medium text-sm flex-shrink-0"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-            <div className="h-8 w-px bg-gray-200 flex-shrink-0" />
 
             <div>
               <h1 className="text-xl font-bold text-[#111827] tracking-tight">Lead Board</h1>

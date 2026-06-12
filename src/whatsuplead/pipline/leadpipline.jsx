@@ -175,7 +175,7 @@ function AddLeadModal({ onClose, onSave, stageOptions = [], sourceOptions = [], 
         stageId = selectedColumn?.id || stage;
       }
 
-      const response = await fetch(`${BASE_URI}add-lead`, {
+      const response = await fetch(`${BASE_URI}/api/add-lead`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +388,7 @@ function AddStageModal({ onClose, onSave }) {
         setError("");
         
         try {
-            const response = await fetch(`${BASE_URI}add-menus`, {
+            const response = await fetch(`${BASE_URI}/api/add-menus`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -588,7 +588,7 @@ export default function LeadPipline() {
             setLoading(true);
             setError(null);
             try {
-                const url = `${BASE_URI}lead-list-table-view`;
+                const url = `${BASE_URI}/api/lead-list-table-view`;
                 const formData = new FormData();
                 formData.append("vendorId", VENDOR_ID);
                 formData.append("userId", USER_ID);
@@ -657,7 +657,7 @@ export default function LeadPipline() {
         formData.append('file', importFile);
 
         try {
-            const response = await fetch(`${BASE_URI}import-leads`, {
+            const response = await fetch(`${BASE_URI}/api/import-leads`, {
                 method: 'POST',
                 body: formData
             });

@@ -273,7 +273,7 @@ export default function LeadDetailPage() {
         throw new Error("Lead ID not found");
       }
 
-      const response = await fetch(`${BASE_URI}lead-details`, {
+      const response = await fetch(`${BASE_URI}/api/lead-details`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -524,7 +524,7 @@ export default function LeadDetailPage() {
       formData.append('leadId', leadId);
       formData.append('idValue', idValue);
 
-      const response = await fetch(`${BASE_URI}updateLeadCustomFieldsValues`, {
+      const response = await fetch(`${BASE_URI}/api/updateLeadCustomFieldsValues`, {
         method: 'POST',
         body: formData
       });
@@ -555,7 +555,7 @@ export default function LeadDetailPage() {
       const formData = new FormData();
       formData.append('vendorId', VENDOR_ID);
 
-      const response = await fetch(`${BASE_URI}labelList`, {
+      const response = await fetch(`${BASE_URI}/api/labelList`, {
         method: 'POST',
         body: formData
       });
@@ -603,7 +603,7 @@ export default function LeadDetailPage() {
       formData.append('userId', USER_ID);
       formData.append('labelIds', selectedTags.join(','));
 
-      const response = await fetch(`${BASE_URI}updateLabel`, {
+      const response = await fetch(`${BASE_URI}/api/updateLabel`, {
         method: 'POST',
         body: formData
       });
@@ -637,7 +637,7 @@ export default function LeadDetailPage() {
       formData.append('labelId', tagId);
       formData.append('userId', USER_ID);
 
-      const response = await fetch(`${BASE_URI}removeLabelFromContact`, {
+      const response = await fetch(`${BASE_URI}/api/removeLabelFromContact`, {
         method: 'POST',
         body: formData
       });
@@ -676,7 +676,7 @@ export default function LeadDetailPage() {
       formData.append('labelTextColor', tagTextColor);
       formData.append('labelBgColor', tagBgColor);
 
-      const response = await fetch(`${BASE_URI}addLabelToContact`, {
+      const response = await fetch(`${BASE_URI}/api/addLabelToContact`, {
         method: 'POST',
         body: formData
       });
@@ -758,7 +758,7 @@ export default function LeadDetailPage() {
       vendorId: VENDOR_UID,
     };
 
-    fetch(`${BASE_URI}getContactDataMaps`, {
+    fetch(`${BASE_URI}/api/getContactDataMaps`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -824,7 +824,7 @@ export default function LeadDetailPage() {
     formData.append("uploadfile", format_typ);
 
     try {
-      const response = await fetch(`${BASE_URI}uploadTempMedia`, {
+      const response = await fetch(`${BASE_URI}/api/uploadTempMedia`, {
         method: "POST",
         body: formData,
       });
@@ -889,7 +889,7 @@ export default function LeadDetailPage() {
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      const response = await axios.post(`${BASE_URI}get-users`, {
+      const response = await axios.post(`${BASE_URI}/api/get-users`, {
         vendorId: VENDOR_ID
       });
 
@@ -926,7 +926,7 @@ export default function LeadDetailPage() {
     }));
 
     // Call API to update priority
-    fetch(`${BASE_URI}update-lead-priority`, {
+    fetch(`${BASE_URI}/api/update-lead-priority`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -970,7 +970,7 @@ export default function LeadDetailPage() {
 
     if (selectedColumn) {
       // Call API to update lead status
-      fetch(`${BASE_URI}update-lead-status`, {
+      fetch(`${BASE_URI}/api/update-lead-status`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1012,7 +1012,7 @@ export default function LeadDetailPage() {
       notes: noteInput.trim()
     };
 
-    fetch(`${BASE_URI}add-lead-notes`, {
+    fetch(`${BASE_URI}/api/add-lead-notes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1065,7 +1065,7 @@ export default function LeadDetailPage() {
       userId: USER_ID, // You might want to get this from user context
     };
 
-    fetch(`${BASE_URI}add-lead-calls`, {
+    fetch(`${BASE_URI}/api/add-lead-calls`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1129,7 +1129,7 @@ export default function LeadDetailPage() {
         formData.append('attachment', fuAttachment);
       }
 
-      fetch(`${BASE_URI}update-followup`, {
+      fetch(`${BASE_URI}/api/update-followup`, {
         method: "POST",
         body: formData
       })
@@ -1184,7 +1184,7 @@ export default function LeadDetailPage() {
         formData.append('attachment', fuAttachment);
       }
 
-      fetch(`${BASE_URI}add-lead-followup`, {
+      fetch(`${BASE_URI}/api/add-lead-followup`, {
         method: "POST",
         body: formData
       })
@@ -1256,7 +1256,7 @@ export default function LeadDetailPage() {
           replyText: waMessage
         });
 
-        response = await fetch(`${BASE_URI}sendChatMessage`, {
+        response = await fetch(`${BASE_URI}/api/sendChatMessage`, {
           method: "POST",
           body: formData,
         });
@@ -1283,7 +1283,7 @@ export default function LeadDetailPage() {
           templateData: templateParams
         });
 
-        response = await fetch(`${BASE_URI}sendTemplateMessage`, {
+        response = await fetch(`${BASE_URI}/api/sendTemplateMessage`, {
           method: "POST",
           body: formData,
         });
@@ -1317,7 +1317,7 @@ export default function LeadDetailPage() {
   const fetchTemplates = async () => {
     try {
       setTemplateLoading(true);
-      const response = await axios.post(`${BASE_URI}templatelistflow`, {
+      const response = await axios.post(`${BASE_URI}/api/templatelistflow`, {
         vendorUId: VENDOR_UID,
       });
 
@@ -1347,7 +1347,7 @@ export default function LeadDetailPage() {
 
   const completeFollowUp = async (followUpId) => {
     try {
-      const response = await axios.post(`${BASE_URI}complete-followUp`, {
+      const response = await axios.post(`${BASE_URI}/api/complete-followUp`, {
         leadFollowUpId: followUpId,
         userId: USER_ID
       });
@@ -1408,7 +1408,7 @@ export default function LeadDetailPage() {
 
   const reAssignLead = async ({ leadId, vendorId, userId }) => {
     try {
-      const response = await axios.post(`${BASE_URI}reAssignLead`, {
+      const response = await axios.post(`${BASE_URI}/api/reAssignLead`, {
         leadId,
         vendorId,
         userId,

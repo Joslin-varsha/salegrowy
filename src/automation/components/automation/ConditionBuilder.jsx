@@ -362,7 +362,7 @@ export function ConditionBuilder({ conditions, logic, onChange, triggerType, web
   // Fetch condition fields from API
   useEffect(() => {
     const fetchConditionFields = async () => {
-      if (!triggerMasterId) return;
+      if (!triggerMasterId || !VENDOR_ID) return; // wait for real vendorId
 
       try {
         setFieldsLoading(true);
@@ -389,14 +389,15 @@ export function ConditionBuilder({ conditions, logic, onChange, triggerType, web
     };
 
     fetchConditionFields();
-  }, [triggerMasterId]);
+  }, [triggerMasterId, VENDOR_ID]); // depend on both
 
   const loadOperators = async (conditionId, fieldName, fieldId, currentCondition) => {
     if (!fieldName || !triggerMasterId || !fieldId) return;
 
     try {
+      const vendorId = await getVendorId(); // always get fresh real vendorId
       const response = await axios.post(`${BASE_URI}/api/automationRuleCondititonMasterValue`, {
-        vendorId: VENDOR_ID,
+        vendorId,
         masterId: triggerMasterId,
         conditionId: fieldId
       });

@@ -1504,17 +1504,7 @@ export default function Automations() {
     return (
         <CRMLayout title="Automations">
             <div className="p-6 space-y-4 animate-fade-in bg-white">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.history.back()}
-                        className="p-0 h-auto hover:bg-transparent text-gray-500 hover:text-gray-900 flex items-center gap-2 font-medium"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                        <span>Back</span>
-                    </Button>
-                </div>
+
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <div className="flex items-center justify-between">
