@@ -12,12 +12,13 @@ import { Plus, Trash2, GripVertical, Calendar, ArrowRight, UserPlus, Send, Tag, 
 import { stages } from "../../data/mockData";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { getVendorId } from "../../utils/getVendorId";
 // Import for WhatsApp background
 const whatsappImage = "/wa.jpg";
 const placeholderImage = "/placeholder.png";
 const BASE_URI = import.meta.env.VITE_BASE_URI;
-const VENDOR_ID = localStorage.getItem('vendor_id');
 const VENDOR_UID = localStorage.getItem('vendor_uid');
+
 // Static action types (will be replaced by API data)
 const ACTION_TYPES = [
   {

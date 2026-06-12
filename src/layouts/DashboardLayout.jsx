@@ -39,8 +39,7 @@ const Sidebar = () => {
     // { icon: Grid, text: 'QR Code', path: '#' },
     { icon: MessageCircle, text: 'WhatsApp Chat', path: '/dashboard/whatsapp-chat' },
     { icon: Clock, text: 'Message Log', path: '/dashboard/message-log' },
-
-    // { icon: Anchor, text: 'Leads', hasSubmenu: true, path: '#' },
+    { icon: Anchor, text: 'Leads', path: '/dashboard/leads' },
     { icon: Megaphone, text: 'Campaigns', path: '/dashboard/campaigns' },
     // { icon: List, text: 'Drip Campaigns', path: '#' },
     // { icon: Wallet, text: 'Wallet', path: '#' },

@@ -14,6 +14,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import Pusher from "pusher-js";
+import { getVendorId } from "../../utils/getVendorId";
 
 const WEBHOOK_SOURCES = [
   { value: "shopify", label: "Shopify" },
@@ -357,7 +358,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
   const [data, setData] = useState(null);
   const generateWebhookUrl = async () => {
     try {
-      const vendorId = localStorage.getItem('vendor_id');
+      const vendorId = await getVendorId();
       const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
       if (res.data?.status && res.data?.data?.webhook_url) {
         onChange({
@@ -380,7 +381,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
 
     let newUrl = config.webhookUrl;
     try {
-      const vendorId = localStorage.getItem('vendor_id');
+      const vendorId = await getVendorId();
       const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
       if (res.data?.status && res.data?.data?.webhook_url) {
         newUrl = res.data.data.webhook_url;
@@ -404,7 +405,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     const customPayload = JSON.stringify(examplePayload, null, 2);
 
     try {
-      const vendorId = localStorage.getItem('vendor_id');
+      const vendorId = await getVendorId();
       const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
       if (res.data?.status && res.data?.data?.webhook_url) {
         newUrl = res.data.data.webhook_url;

@@ -90,9 +90,9 @@ import { BeforeDateConfigPanel } from "../components/automation/BeforeDateConfig
 import { AfterDateConfigPanel } from "../components/automation/AfterDateConfig";
 import { format } from "date-fns";
 import { Separator } from "../components/ui/separator";
+import { getVendorId } from "../utils/getVendorId";
 
 const BASE_URI = import.meta.env.VITE_BASE_URI;
-const VENDOR_ID = localStorage.getItem('vendor_id');
 const USER_ID = localStorage.getItem('user_id');
 
 
@@ -236,6 +236,16 @@ const emptyForm = {
 };
 
 export default function Automations() {
+    const [VENDOR_ID, setVendorId] = useState(null);
+
+    // Fetch real vendor ID (vendors__id) from profile API on mount
+    // Starts as null — data fetching is blocked until this resolves
+    useEffect(() => {
+        getVendorId().then(id => {
+            if (id) setVendorId(id);
+        });
+    }, []);
+
     const formatTimeForInput = (timeStr) => {
         if (!timeStr) return "09:00";
         // If it's HH:mm:ss, take only HH:mm
@@ -294,13 +304,13 @@ export default function Automations() {
     // Fetch triggers from API
     useEffect(() => {
         const fetchTriggers = async () => {
+            if (!VENDOR_ID) return;
             try {
                 setTriggersLoading(true);
-                const response = await axios.post(`${BASE_URI}/api/automationRuleMasterList`, {
+                const response = await axios.post(`${BASE_URI}/api/automationRuleMasterListShopify`, {
                     vendorId: VENDOR_ID
                 });
-
-                if (response.data.status && response.data.data?.automationMaster) {
+                if (response.data.status && response.data.data && response.data.data.automationMaster) {
                     const apiTriggers = response.data.data.automationMaster;
 
                     // Clear existing arrays before adding new triggers
@@ -389,7 +399,8 @@ export default function Automations() {
         fetchTriggers();
         fetchColumns();
         fetchCustomLeadFields();
-    }, []);
+    }, [VENDOR_ID]); // Wait for real vendors__id before fetching
+
 
     const [leadScores, setLeadScores] = useState([]);
     const [leadScoresLoading, setLeadScoresLoading] = useState(false);
@@ -660,8 +671,10 @@ export default function Automations() {
     }, [activeTab, subActiveTab]);
 
     useEffect(() => {
+        if (!VENDOR_ID) return;
         loadRules();
-    }, []);
+    }, [VENDOR_ID]); // Wait for real vendors__id before fetching
+
 
     const toggleRule = async (id) => {
         const rule = rules.find((r) => r.id === id);
@@ -723,7 +736,7 @@ export default function Automations() {
                         vendorId: VENDOR_ID,
                         masterId: triggerMasterId
                     });
-                    if (response.data.status && response.data.data?.automationMaster) {
+                    if (response.data.status && response.data.data && response.data.data.automationMaster) {
                         actionsMaster = response.data.data.automationMaster;
                     }
                 } catch (error) {
@@ -1170,7 +1183,7 @@ export default function Automations() {
 
 
 
-            const response = await axios.post(`${BASE_URI}/api/reateAutomationRuleStep1Api`, requestData);
+            const response = await axios.post(`${BASE_URI}/api/createAutomationRuleStep1Api`, requestData);
 
             if (response.data.status) {
                 toast.success(response.data.message || (editingId ? "Automation rule step 1 updated successfully" : "Automation rule step 1 created successfully"));
@@ -2142,7 +2155,7 @@ export default function Automations() {
                                                             if (t.value === "webhook_trigger") {
                                                                 const generateUrl = async () => {
                                                                     try {
-                                                                        const vendorId = localStorage.getItem('vendor_id') || VENDOR_ID;
+                                                                        const vendorId = await getVendorId();
                                                                         const res = await axios.post(`${BASE_URI}/api/generate-webhook-url`, { vendorId });
                                                                         if (res.data?.status && res.data?.data?.webhook_url) {
                                                                             return res.data.data.webhook_url;

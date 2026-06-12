@@ -12,9 +12,11 @@ import {
 import { Plus, Trash2, Calendar, Clock } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { getVendorId } from "../../utils/getVendorId";
+
 
 const BASE_URI = import.meta.env.VITE_BASE_URI;
-const VENDOR_ID = localStorage.getItem('vendor_id');
+
 
 // Base CRM fields always available (will be replaced by API data)
 const CRM_FIELDS = [];
@@ -270,7 +272,16 @@ function getOperatorsForField(field) {
 const NO_VALUE_OPERATORS = ["exists", "not_exists", "is_empty", "is", "is_not", "does_not_exist"];
 
 export function ConditionBuilder({ conditions, logic, onChange, triggerType, webhookConfig, triggerMasterId }) {
+  const [VENDOR_ID, setVendorId] = useState(null);
   const [apiFields, setApiFields] = useState([]);
+
+  // Fetch real vendor ID (vendors__id) from profile API on mount
+  useEffect(() => {
+    getVendorId().then(id => {
+      if (id) setVendorId(id);
+    });
+  }, []);
+
   const [fieldsLoading, setFieldsLoading] = useState(false);
   const [conditionOperators, setConditionOperators] = useState({}); // Map of conditionId -> operators[]
   const latestConditions = useRef(conditions);

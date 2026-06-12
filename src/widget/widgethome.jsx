@@ -26,8 +26,7 @@ const WidgetHome = ({ embedded = false }) => {
 
     const [isAiEnabled, setIsAiEnabled] = useState(true);
     const [isAiUpdating, setIsAiUpdating] = useState(false);
-    const [isWidgetEnabled, setIsWidgetEnabled] = useState(false);
-    const [isWidgetUpdating, setIsWidgetUpdating] = useState(false);
+    const [isThemeLoading, setIsThemeLoading] = useState(false);
 
     const BASE_URI = import.meta.env.VITE_BASE_URI;
 
@@ -89,33 +88,39 @@ const WidgetHome = ({ embedded = false }) => {
         }
     };
 
-    const toggleWidgetStatus = async () => {
-        const newStatus = !isWidgetEnabled;
-        setIsWidgetUpdating(true);
+    const openThemeEditor = async () => {
+        setIsThemeLoading(true);
         try {
-            const response = await fetch(`${BASE_URI}/api/widgetToggle`, {
+            const response = await fetch(`${BASE_URI}/api/getThemeEditorUrl`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({
-                    vendor_id: VENDOR_ID,
-                    extension: newStatus ? 1 : 0
-                })
+                body: JSON.stringify({ vendor_id: VENDOR_ID })
             });
             const result = await response.json();
-            if (result.success || result.status || result.success === undefined) {
-                setIsWidgetEnabled(newStatus);
-                message.success(`Widget ${newStatus ? 'enabled' : 'disabled'}`);
+            console.log('getThemeEditorUrl response:', result);
+
+            // Extract URL from any possible field in the response
+            const redirectUrl =
+                result.editor_url ||
+                result.url ||
+                result.redirect_url ||
+                result.redirectUrl ||
+                (result.data && (result.data.editor_url)) ||
+                (typeof result.response === 'string' && result.response.startsWith('http') ? result.response : null);
+
+            if (redirectUrl) {
+                window.open(redirectUrl, '_blank');
             } else {
-                message.error(result.message || 'Failed to update Widget status');
+                message.error(result.message || 'Could not retrieve theme editor URL');
             }
         } catch (error) {
-            console.error('Error updating Widget status:', error);
-            message.error('Failed to update Widget status');
+            console.error('Error fetching theme editor URL:', error);
+            message.error('Failed to open theme editor');
         } finally {
-            setIsWidgetUpdating(false);
+            setIsThemeLoading(false);
         }
     };
 
@@ -218,50 +223,38 @@ const WidgetHome = ({ embedded = false }) => {
                             )}
                         </div>
 
-                        {/* Enable / Disable Widget Switch */}
-                        <div 
-                            onClick={!isWidgetUpdating ? toggleWidgetStatus : undefined}
+                        {/* Customize Widget Button */}
+                        <button
+                            onClick={openThemeEditor}
+                            disabled={isThemeLoading}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '1.5rem',
+                                gap: '0.5rem',
                                 padding: '0.45rem 1rem',
-                                border: '1px solid #edf2f7',
+                                border: 'none',
                                 borderRadius: '8px',
-                                background: '#f8fafc',
-                                cursor: isWidgetUpdating ? 'not-allowed' : 'pointer',
-                                minWidth: '220px',
-                                userSelect: 'none',
-                                transition: 'all 0.2s ease'
+                                background: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)',
+                                color: '#ffffff',
+                                fontWeight: 600,
+                                fontSize: '0.8rem',
+                                cursor: isThemeLoading ? 'not-allowed' : 'pointer',
+                                opacity: isThemeLoading ? 0.7 : 1,
+                                transition: 'all 0.2s ease',
+                                boxShadow: '0 2px 8px rgba(37,211,102,0.35)',
+                                whiteSpace: 'nowrap'
                             }}
                         >
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569' }}>Enable / Disable Widget</span>
-                            {isWidgetUpdating ? (
-                                <SyncOutlined spin style={{ color: 'var(--wa-green)', fontSize: '13px' }} />
+                            {isThemeLoading ? (
+                                <SyncOutlined spin style={{ fontSize: '13px' }} />
                             ) : (
-                                <div style={{ 
-                                    width: '34px', 
-                                    height: '18px', 
-                                    borderRadius: '18px', 
-                                    background: isWidgetEnabled ? 'var(--wa-green)' : '#cbd5e1',
-                                    position: 'relative',
-                                    transition: 'all 0.2s ease',
-                                }}>
-                                    <div style={{ 
-                                        position: 'absolute',
-                                        top: '2px',
-                                        left: isWidgetEnabled ? '18px' : '2px',
-                                        width: '14px',
-                                        height: '14px',
-                                        borderRadius: '50%',
-                                        background: '#ffffff',
-                                        transition: 'all 0.2s ease',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
-                                    }}></div>
-                                </div>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 20h9"/>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                </svg>
                             )}
-                        </div>
+                            {isThemeLoading ? 'Opening...' : 'Enable/ Disable Widget'}
+                        </button>
                     </div>
                 </nav>
                 <div className="flex-1 overflow-y-auto">
@@ -292,6 +285,8 @@ const WidgetHome = ({ embedded = false }) => {
                 isAiEnabled={isAiEnabled}
                 isAiUpdating={isAiUpdating}
                 toggleAiStatus={toggleAiStatus}
+                openThemeEditor={openThemeEditor}
+                isThemeLoading={isThemeLoading}
             />
 
             {/* Main Content */}

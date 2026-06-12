@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bot, Sparkles, Loader2, ExternalLink } from 'lucide-react';
 
 const Sidebar = ({ 
     menuItems, 
@@ -8,7 +8,9 @@ const Sidebar = ({
     accentColor,
     isAiEnabled,
     isAiUpdating,
-    toggleAiStatus
+    toggleAiStatus,
+    openThemeEditor,
+    isThemeLoading
 }) => {
     return (
         <aside className="w-[240px] bg-white border-r border-slate-200 flex flex-col p-5 z-10 transition-all duration-300">
@@ -84,6 +86,26 @@ const Sidebar = ({
                             : 'AI is currently paused. Manual replies only.'}
                     </p>
                 </div>
+
+                {/* Customize Widget Button */}
+                <button
+                    onClick={openThemeEditor}
+                    disabled={isThemeLoading}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-bold text-[11px] uppercase tracking-widest text-white transition-all duration-200"
+                    style={{
+                        background: 'linear-gradient(135deg, #25d366 0%, #128c7e 100%)',
+                        boxShadow: '0 2px 10px rgba(37,211,102,0.35)',
+                        opacity: isThemeLoading ? 0.7 : 1,
+                        cursor: isThemeLoading ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    {isThemeLoading ? (
+                        <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                        <ExternalLink size={13} />
+                    )}
+                    {isThemeLoading ? 'Opening...' : 'Customize Widget'}
+                </button>
             </div>
         </aside>
     );
