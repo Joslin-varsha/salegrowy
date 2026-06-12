@@ -17,9 +17,9 @@ import Pusher from "pusher-js";
 
 const WEBHOOK_SOURCES = [
   { value: "shopify", label: "Shopify" },
-  { value: "woocommerce", label: "WooCommerce" },
-  { value: "google_forms", label: "Google Forms" },
-  { value: "custom", label: "Custom Webhook" },
+  // { value: "woocommerce", label: "WooCommerce" },
+  // { value: "google_forms", label: "Google Forms" },
+  // { value: "custom", label: "Custom Webhook" },
 ];
 
 const WEBHOOK_EVENTS = {
