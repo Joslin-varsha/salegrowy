@@ -54,6 +54,7 @@ const Sidebar = () => {
     // { icon: Waypoints, text: 'Flow Messages', hasSubmenu: true, path: '#' },
     { icon: Layers, text: 'Templates', path: '/dashboard/whatsapp-templates' },
     { icon: Bot, text: 'Bot Flows', path: '/dashboard/bot/flows' },
+    { icon: Zap, text: 'Automation', path: '/dashboard/automation' },
     {
       icon: Sparkles, text: 'AI Agent', hasSubmenu: true, path: '/dashboard/agent', submenu: [
         { text: 'Knowledge Base', path: '/dashboard/agent/knowledge', icon: Database },

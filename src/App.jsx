@@ -35,6 +35,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactUs from "./pages/ContactUs";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
+import Automations from './automation/home/automationhome';
 
 // Redirects logged-in users away from login/register pages
 function PublicRoute() {
@@ -91,6 +92,7 @@ function App() {
           <Route path="agent/:tab" element={<AIAgent />} />
           <Route path="chatflow" element={<FlowChatbotUI />} />
           <Route path="bot/flows" element={<BotFlows />} />
+          <Route path="automation" element={<Automations />} />
           <Route path="whatsapp-chat" element={<WhatsAppChat />} />
           <Route path="sync-products" element={<SyncProducts />} />
           <Route path="sync-customers" element={<SyncCustomers />} />
