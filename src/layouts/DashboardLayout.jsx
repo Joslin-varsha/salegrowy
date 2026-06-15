@@ -275,8 +275,10 @@ const Topbar = ({ isLargeScreen }) => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+    localStorage.clear();
+    navigate('/', { replace: true });
+    // Force a page reload to ensure all states are reset
+    window.location.href = '/';
   };
 
   return (
