@@ -3,6 +3,18 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import Data from './data/data.js'
+import axios from 'axios';
+
+// Add a global request interceptor so all axios requests (e.g., from automation and aiagent) automatically get the token
+axios.interceptors.request.use(function (config) {
+    const token = localStorage.getItem('token');
+    if (token && token !== 'null' && token !== 'undefined') {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, function (error) {
+    return Promise.reject(error);
+});
 
 // Suppress browser console warnings for closing/closed WebSockets (e.g. from Pusher cleanup)
 if (typeof window !== 'undefined' && window.WebSocket) {
