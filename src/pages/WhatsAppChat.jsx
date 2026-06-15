@@ -404,11 +404,36 @@ if (isNearBottom) {
         data = decryptData(encryptedResponse.payload);
       }
 
+      console.log('🔍 DEBUG: Backend History Response:', data);
+
       if (response.ok && data && data.success) {
-        const historyList = data.data?.messages || data.data?.chats || data.data || [];
+        let historyList = data.data?.messages || data.data?.chats || data.data || [];
+        
+        // Ensure chronological order (oldest first) so they display top-to-bottom correctly
+        const robustSort = (a, b) => {
+          const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          const validA = !isNaN(tA) && tA > 0;
+          const validB = !isNaN(tB) && tB > 0;
+          
+          if (validA && validB) return tA - tB;
+          
+          // Fallback to auto-incrementing ID if timestamps are missing/invalid
+          const idA = a._id || a.wamid || 0;
+          const idB = b._id || b.wamid || 0;
+          return idA - idB;
+        };
+
+        historyList = [...historyList].sort(robustSort);
+
         if (append) {
           // Prepend older messages
-          setMessages(prev => [...historyList, ...prev]);
+          setMessages(prev => {
+            const combined = [...historyList, ...prev];
+            // Remove exact duplicates just in case before sorting
+            const unique = combined.filter((v, i, a) => a.findIndex(t => (t._id && t._id === v._id)) === i);
+            return unique.sort(robustSort);
+          });
           
           // Maintain scroll position after DOM re-renders
           setTimeout(() => {
@@ -711,10 +736,10 @@ if (isNearBottom) {
   // Determine message direction
   const isMessageIncoming = (msg) => {
     if (!msg) return false;
-    if (msg.is_incoming_message === true || msg.is_incoming_message === 1) return true;
+    if (msg.is_incoming_message === true || String(msg.is_incoming_message) === '1' || String(msg.is_incoming_message) === 'true') return true;
     if (msg.direction === 'incoming') return true;
     if (msg.sender === 'customer') return true;
-    if (msg.from_me === false) return true;
+    if (msg.from_me === false || String(msg.from_me) === 'false') return true;
     return false;
   };
 
@@ -1208,6 +1233,7 @@ if (isNearBottom) {
                 </div>
               ) : (
                 <>
+                  {console.log('🎨 DEBUG: Rendering messages array:', messages)}
                   {loadingMoreHistory && (
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem', width: '100%' }}>
                       <Loader2 size={20} className="animate-spin" style={{ color: '#075e54' }} />
