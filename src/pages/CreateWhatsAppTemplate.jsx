@@ -178,7 +178,7 @@ export default function CreateWhatsAppTemplate() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       setHeaderFile(file);
@@ -186,6 +186,43 @@ export default function CreateWhatsAppTemplate() {
         setHeaderFilePreview(URL.createObjectURL(file));
       } else {
         setHeaderFilePreview(null);
+      }
+
+      setLoading(true);
+      const vendorId = localStorage.getItem('vendor_uid') || localStorage.getItem('vendor_id') || '';
+      const format_typ =
+        formData.headerType === 'IMAGE'
+          ? 'whatsapp_image'
+          : formData.headerType === 'VIDEO'
+          ? 'whatsapp_video'
+          : 'whatsapp_document';
+
+      const uploadData = new FormData();
+      uploadData.append('filepond', file);
+      uploadData.append('vendorId', vendorId);
+      uploadData.append('uploadfile', format_typ);
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URI}/api/uploadTempMedia`, {
+          method: 'POST',
+          body: uploadData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Upload failed with status: ${response.status}`);
+        }
+        const result = await response.json();
+        const url = result.url || result.data?.url;
+        if (url) {
+          setFormData(prev => ({ ...prev, headerHandle: url }));
+        } else {
+          alert(result.message || 'File upload failed');
+        }
+      } catch (err) {
+        console.error('File upload error:', err);
+        alert('Failed to upload media file to server.');
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -252,6 +289,12 @@ export default function CreateWhatsAppTemplate() {
       return;
     }
 
+    const nameRegex = /^[a-z0-9_]+$/;
+    if (!nameRegex.test(formData.name)) {
+      alert("Template name must contain only lowercase letters, numbers, and underscores (e.g., welcome_message). Uppercase letters, spaces, and special characters are not allowed.");
+      return;
+    }
+
     setLoading(true);
     const components = [];
 
@@ -263,9 +306,12 @@ export default function CreateWhatsAppTemplate() {
           headerComp.example = { header_text: [formData.headerVariableExample] };
         }
       } else if (['IMAGE', 'VIDEO', 'DOCUMENT'].includes(formData.headerType)) {
-        if (formData.headerHandle) {
-          headerComp.example = { header_handle: [formData.headerHandle] };
+        if (!formData.headerHandle) {
+          alert(`Please select and upload a sample file for your ${formData.headerType.toLowerCase()} header before submitting.`);
+          setLoading(false);
+          return;
         }
+        headerComp.example = { header_handle: [formData.headerHandle] };
       }
       components.push(headerComp);
     }
@@ -335,7 +381,21 @@ export default function CreateWhatsAppTemplate() {
 
   return (
     <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '1rem' }}>
-      <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        style={{ display: 'none' }} 
+        onChange={handleFileChange} 
+        accept={
+          formData.headerType === 'IMAGE' 
+            ? 'image/*' 
+            : formData.headerType === 'VIDEO' 
+            ? 'video/*' 
+            : formData.headerType === 'DOCUMENT' 
+            ? '.pdf,.doc,.docx,.xls,.xlsx' 
+            : undefined
+        }
+      />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--wa-green)', margin: 0 }}>
