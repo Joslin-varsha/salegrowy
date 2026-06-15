@@ -237,6 +237,14 @@ const Topbar = ({ isLargeScreen }) => {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
           });
+          
+        if (res.status === 401) {
+          // Token is expired or invalid, log them out automatically
+          localStorage.removeItem('token');
+          navigate('/', { replace: true });
+          return;
+        }
+
         if (res.ok) {
           const result = await res.json();
           if (result.success && result.data?.user) {
