@@ -321,7 +321,7 @@ export default function DashboardLayout() {
   }, [navigate]);
 
   // Routes that should be full width without sidebar/topbar
-  const isFullWidthRoute = location.pathname === '/dashboard/chatflow';
+  const isFullWidthRoute = location.pathname === '/dashboard/chatflow' || location.pathname === '/dashboard/whatsuplead/leaddetails';
 
   useEffect(() => {
     const handleResize = () => {

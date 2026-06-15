@@ -366,7 +366,7 @@ export function ConditionBuilder({ conditions, logic, onChange, triggerType, web
 
       try {
         setFieldsLoading(true);
-        const response = await axios.post(`${BASE_URI}/api/automationRuleCondititonMasterList`, {
+        const response = await axios.post(`${BASE_URI}/api/automationRuleCondititonMasterListShopify`, {
           vendorId: VENDOR_ID,
           masterId: triggerMasterId
         });

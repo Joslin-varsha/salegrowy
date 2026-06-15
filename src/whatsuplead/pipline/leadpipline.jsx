@@ -1118,7 +1118,7 @@ export default function LeadPipline() {
                                                     <div>
                                                         <p
                                                             className="font-semibold text-[#111827] group-hover:text-[#2563EB] transition-colors cursor-pointer"
-                                                            onClick={() => navigate("/whatsuplead/leaddetails", { state: { lead } })}
+                                                            onClick={() => navigate("/dashboard/whatsuplead/leaddetails", { state: { lead } })}
                                                         >
                                                             {lead.name}
                                                         </p>
@@ -1185,7 +1185,7 @@ export default function LeadPipline() {
                                             <td className="px-5 py-3.5 text-center">
                                                 <button
                                                     title="View details"
-                                                    onClick={(e) => { e.stopPropagation(); navigate("/whatsuplead/leaddetails", { state: { lead } }); }}
+                                                    onClick={(e) => { e.stopPropagation(); navigate("/dashboard/whatsuplead/leaddetails", { state: { lead } }); }}
                                                     className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all hover:scale-110"
                                                     style={{ background: "#eff6ff", color: "#2563EB", border: "1px solid #bfdbfe" }}
                                                     onMouseEnter={(e) => { e.currentTarget.style.background = "#2563EB"; e.currentTarget.style.color = "#fff"; }}

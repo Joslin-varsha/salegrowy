@@ -1735,7 +1735,7 @@ function LeadCard({
         setTimeout(() => { didDrag.current = false; }, 100);
       }}
       onClick={() => {
-        if (!didDrag.current) navigate("/whatsuplead/leaddetails", { state: { lead } });
+        if (!didDrag.current) navigate("/dashboard/whatsuplead/leaddetails", { state: { lead } });
       }}
       className="group relative bg-white rounded-xl border transition-all duration-150 hover:shadow-md hover:border-[#2563EB]"
       style={{

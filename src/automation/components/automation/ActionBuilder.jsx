@@ -258,7 +258,7 @@ export function ActionBuilder({ actions, onChange, triggerMasterId }) {
 
       try {
         setActionsLoading(true);
-        const response = await axios.post(`${BASE_URI}/api/automationRuleActionMasterList`, {
+        const response = await axios.post(`${BASE_URI}/api/automationRuleActionMasterListShopify`, {
           vendorId: VENDOR_ID,
           masterId: triggerMasterId
         });

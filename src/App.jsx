@@ -98,6 +98,7 @@ function App() {
           <Route path="automation" element={<Automations />} />
           <Route path="leads" element={<Whatsuplead />} />
           <Route path="leadpipline" element={<LeadPipline />} />
+          <Route path="whatsuplead/leaddetails" element={<LeadDetailPage />} />
           <Route path="whatsapp-chat" element={<WhatsAppChat />} />
           <Route path="sync-products" element={<SyncProducts />} />
           <Route path="sync-customers" element={<SyncCustomers />} />
@@ -113,7 +114,6 @@ function App() {
 
         {/* Subscription Success (Full Screen) */}
         <Route path="/subscription-success" element={<SubscriptionSuccess />} />
-        <Route path="/whatsuplead/leaddetails" element={<LeadDetailPage />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -912,7 +912,7 @@ const KnowledgeBaseContent = ({ setShowRedirectDialog, vendorId }) => {
     { title: 'KNOWLEDGE', desc: 'Add text-based information to train your Agent', icon: <ThunderboltOutlined />, color: '#4ade80' },
     // { title: 'FILE', desc: 'Upload files to train your Agent', icon: <FileTextOutlined />, color: '#38bdf8' },
     { title: 'SHOPIFY', desc: 'Sync your products from Shopify store', icon: <ShoppingOutlined />, color: '#96bf48' },
-    { title: 'WOOCOMMERCE', desc: 'Connect your WooCommerce store', icon: <ShoppingCartOutlined />, color: '#96588a' },
+    // { title: 'WOOCOMMERCE', desc: 'Connect your WooCommerce store', icon: <ShoppingCartOutlined />, color: '#96588a' },
     { title: 'META', desc: 'Connect your Meta catalog & store', icon: <FacebookOutlined />, color: '#0668E1' },
 
     // { title: 'LINK', desc: 'Add website URLs train your Agent with dynamic information', icon: <LinkOutlined />, color: '#fbbf24' },

@@ -732,7 +732,7 @@ export default function Automations() {
             let actionsMaster = [];
             if (triggerMasterId) {
                 try {
-                    const response = await axios.post(`${BASE_URI}/api/automationRuleActionMasterList`, {
+                    const response = await axios.post(`${BASE_URI}/api/automationRuleActionMasterListShopify`, {
                         vendorId: VENDOR_ID,
                         masterId: triggerMasterId
                     });
