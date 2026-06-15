@@ -43,7 +43,7 @@ import LeadPipline from './whatsuplead/pipline/leadpipline';
 // Redirects logged-in users away from login/register pages
 function PublicRoute() {
   const token = localStorage.getItem('token');
-  if (token) return <Navigate to="/dashboard" replace />;
+  if (token && token !== 'null' && token !== 'undefined') return <Navigate to="/dashboard" replace />;
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

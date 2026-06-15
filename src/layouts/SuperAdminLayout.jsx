@@ -11,13 +11,13 @@ export default function SuperAdminLayout() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
       navigate('/', { replace: true });
     }
   }, [navigate]);
 
   const token = localStorage.getItem('token');
-  if (!token) {
+  if (!token || token === 'null' || token === 'undefined') {
     return <Navigate to="/" replace />;
   }
 
