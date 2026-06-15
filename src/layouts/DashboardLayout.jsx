@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../config';
 import { useState, useEffect, useRef } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { Bell, User, LayoutDashboard, Gift, Grid, MessageCircle, Clock, Anchor, Megaphone, List, Wallet, Users, Share2, Layers, ChevronRight, ArrowLeft, TrendingUp, Waypoints, Bot, Database, Settings as SettingsIcon, Webhook, Sparkles, Tag, Zap} from 'lucide-react';
 import { SyncOutlined } from '@ant-design/icons';
 import { message } from 'antd';
@@ -319,6 +319,11 @@ export default function DashboardLayout() {
       navigate('/', { replace: true });
     }
   }, [navigate]);
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
 
   // Routes that should be full width without sidebar/topbar
   const isFullWidthRoute = location.pathname === '/dashboard/chatflow' || location.pathname === '/dashboard/whatsuplead/leaddetails';

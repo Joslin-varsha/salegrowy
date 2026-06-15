@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { LayoutDashboard, Gift, Store, Megaphone, Users, User, Languages, FileText, Settings, ShieldAlert, LogOut, ChevronDown, Bell } from 'lucide-react';
 
 export default function SuperAdminLayout() {
@@ -15,6 +15,11 @@ export default function SuperAdminLayout() {
       navigate('/', { replace: true });
     }
   }, [navigate]);
+
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
 
   useEffect(() => {
     const handleResize = () => {
