@@ -24,7 +24,8 @@ export default function CreateCampaign() {
 
   const [templatesData, setTemplatesData] = useState([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
-
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -58,7 +59,32 @@ export default function CreateCampaign() {
       }
     };
     fetchTemplates();
-  }, []);
+  }, [refreshKey]);
+
+  const handleSyncTemplates = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/templates/sync`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert("Templates synced successfully!");
+        setRefreshKey(prev => prev + 1);
+      } else {
+        alert(result.message || "Failed to sync templates");
+      }
+    } catch (err) {
+      console.error("Error syncing templates:", err);
+      alert("Error syncing templates. Server error.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchSelectedTemplateDetails = async () => {
@@ -566,9 +592,27 @@ export default function CreateCampaign() {
           Create New Campaign
         </h1>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="btn btn-secondary" style={{ backgroundColor: '#64748b', color: 'white', border: 'none', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', width: 'auto', cursor: 'pointer' }}>
-            <RefreshCw size={14} />
-            Sync WhatsApp Templates
+          <button 
+            className="btn btn-secondary" 
+            style={{ 
+              backgroundColor: '#64748b', 
+              color: 'white', 
+              border: 'none', 
+              padding: '0.5rem 1rem', 
+              fontSize: '0.8rem', 
+              fontWeight: 600, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              width: 'auto', 
+              cursor: isSyncing ? 'not-allowed' : 'pointer',
+              opacity: isSyncing ? 0.7 : 1
+            }}
+            disabled={isSyncing}
+            onClick={handleSyncTemplates}
+          >
+            <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+            {isSyncing ? 'Syncing...' : 'Sync WhatsApp Templates'}
           </button>
           <button
             className="btn btn-primary"
