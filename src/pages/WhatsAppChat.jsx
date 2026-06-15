@@ -490,82 +490,79 @@ if (isNearBottom) {
         const historyList = data.data?.messages || data.data?.chats || data.data || [];
 
         if (historyList.length > 0) {
-  const latestMessage = historyList[historyList.length - 1];
+          // Find the newest message based on date, to avoid sorting order bugs
+          const sortedHistory = [...historyList].sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+          const latestMessage = sortedHistory[sortedHistory.length - 1];
 
-  setChats(prev => {
-    const updatedChats = prev.map(c => {
-      if (c && c._id === chatItem._id) {
-        return {
-          ...c,
-          last_message:
-            latestMessage.message ||
-            latestMessage.text ||
-            c.last_message,
-          last_message_time:
-            latestMessage.created_at ||
-            c.last_message_time
-        };
-      }
-      return c;
-    });
-    return [...updatedChats].sort((a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0));
-  });
-}
+          setChats(prev => {
+            const updatedChats = prev.map(c => {
+              if (c && c._id === chatItem._id) {
+                return {
+                  ...c,
+                  last_message:
+                    latestMessage.message ||
+                    latestMessage.text ||
+                    c.last_message,
+                  last_message_time:
+                    latestMessage.created_at ||
+                    c.last_message_time
+                };
+              }
+              return c;
+            });
+            return [...updatedChats].sort((a, b) => new Date(b.last_message_time || 0) - new Date(a.last_message_time || 0));
+          });
 
-        if (historyList.length > 0) {
-          const latestPolledMsg = historyList[historyList.length - 1];
-          
+          // Update messages state by identifying truly new messages
           setMessages(prev => {
             if (prev.length === 0) {
-              return historyList;
+              return sortedHistory;
             }
-            
-            const latestCurrentMsg = prev[prev.length - 1];
-            const currentId = latestCurrentMsg._id || latestCurrentMsg.logId || latestCurrentMsg.wamid;
-            const polledId = latestPolledMsg._id || latestPolledMsg.logId || latestPolledMsg.wamid;
-            const currentText = latestCurrentMsg.message || latestCurrentMsg.text;
-            const polledText = latestPolledMsg.message || latestPolledMsg.text;
-            
-            const isSame = (currentId && polledId && currentId === polledId) || 
-                           (!currentId && !polledId && currentText === polledText);
-            
-            if (!isSame) {
-              const indexOfCurrent = historyList.findIndex(m => {
-                const mid = m._id || m.logId || m.wamid;
-                const mtext = m.message || m.text;
-                return (mid && currentId && mid === currentId) || (mtext === currentText);
-              });
-              
-              let newMessages = [];
-              if (indexOfCurrent !== -1) {
-                newMessages = historyList.slice(indexOfCurrent + 1);
+
+            // Gather existing IDs and texts of messages without IDs (e.g. locally sent messages waiting for backend sync)
+            const existingIds = new Set();
+            const existingTextsWithoutId = new Set();
+
+            prev.forEach(m => {
+              const id = m._id || m.logId || m.wamid;
+              if (id) {
+                existingIds.add(String(id));
               } else {
-                newMessages = [latestPolledMsg];
+                const text = m.message || m.text;
+                if (text) {
+                  existingTextsWithoutId.add(text.trim());
+                }
+              }
+            });
+
+            // Filter out any messages from the polled history that we already have
+            const newMsgs = historyList.filter(m => {
+              const id = m._id || m.logId || m.wamid;
+              if (id && existingIds.has(String(id))) {
+                return false;
               }
               
-              if (newMessages.length > 0) {
-  setTimeout(() => {
-    scrollToBottom();
-  }, 100);
+              const text = m.message || m.text;
+              if (text) {
+                const trimmed = text.trim();
+                // Avoid duplicating locally sent messages by matching by text once
+                if (existingTextsWithoutId.has(trimmed)) {
+                  existingTextsWithoutId.delete(trimmed);
+                  return false;
+                }
+              }
+              return true;
+            });
 
-  const existingKeys = new Set(
-  prev.map(
-    m =>
-      (m._id || m.logId || m.wamid || '') +
-      (m.message || m.text || '')
-  )
-);
+            if (newMsgs.length > 0) {
+              // Sort the new messages chronologically (oldest first) so they append in the correct order
+              newMsgs.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+              
+              setTimeout(() => {
+                scrollToBottom();
+              }, 100);
 
-const filteredNewMessages = newMessages.filter(m => {
-  const key =
-    (m._id || m.logId || m.wamid || '') +
-    (m.message || m.text || '');
-
-  return !existingKeys.has(key);
-});
-
-return [...prev, ...filteredNewMessages];
-}
+              return [...prev, ...newMsgs];
             }
             return prev;
           });
@@ -579,6 +576,7 @@ return [...prev, ...filteredNewMessages];
       }
     }
   };
+
 
   // Automatic load older messages on scroll top
   const handleChatScroll = (e) => {
