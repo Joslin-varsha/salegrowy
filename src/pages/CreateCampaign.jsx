@@ -2,6 +2,7 @@ import { API_BASE_URL } from '../config';
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, RefreshCw, List, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { decryptData } from '../utils/encryption';
 
 
 
@@ -26,6 +27,14 @@ export default function CreateCampaign() {
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const [groups, setGroups] = useState([]);
+  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [displayPhoneNumber, setDisplayPhoneNumber] = useState('');
+
+  const [labels, setLabels] = useState([]);
+  const [labelsLoading, setLabelsLoading] = useState(true);
+  const [selectedLabel, setSelectedLabel] = useState('');
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -60,6 +69,104 @@ export default function CreateCampaign() {
     };
     fetchTemplates();
   }, [refreshKey]);
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        setGroupsLoading(true);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/groups`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ page: 1, limit: 100 })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result?.success && Array.isArray(result.data)) {
+            setGroups(result.data);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching groups:", err);
+      } finally {
+        setGroupsLoading(false);
+      }
+    };
+
+    const fetchPhone = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storageKey = token ? `wa_connection_${token.substring(0, 32)}` : 'wa_connection_guest';
+        const savedWA = JSON.parse(localStorage.getItem(storageKey));
+        
+        let activeNum = '';
+        if (savedWA?.raw_settings?.whatsapp_phone_numbers) {
+          const phoneNumbers = JSON.parse(savedWA.raw_settings.whatsapp_phone_numbers);
+          const activePhoneId = savedWA.phone_number_id || (phoneNumbers[0]?.id || '');
+          const activePhone = phoneNumbers.find(p => p.id === activePhoneId);
+          activeNum = activePhone?.display_phone_number || savedWA.display_phone_number || '';
+        }
+
+        if (activeNum) {
+          setDisplayPhoneNumber(activeNum);
+          return;
+        }
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/setup-details`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          const encryptedResponse = await response.json();
+          let result = encryptedResponse.payload ? decryptData(encryptedResponse.payload) : encryptedResponse;
+          if (result?.data?.raw_settings?.whatsapp_phone_numbers) {
+            const phoneNumbers = JSON.parse(result.data.raw_settings.whatsapp_phone_numbers);
+            const activePhoneId = result.data.phone_number_id || (phoneNumbers[0]?.id || '');
+            const activePhone = phoneNumbers.find(p => p.id === activePhoneId);
+            activeNum = activePhone?.display_phone_number || result.data.display_phone_number || '';
+            if (activeNum) {
+              setDisplayPhoneNumber(activeNum);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching phone number:", err);
+      }
+    };
+
+    const fetchLabels = async () => {
+      try {
+        setLabelsLoading(true);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/labels`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ page: 1, limit: 100 })
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result?.success && Array.isArray(result.data)) {
+            setLabels(result.data);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching labels:", err);
+      } finally {
+        setLabelsLoading(false);
+      }
+    };
+
+    fetchGroups();
+    fetchPhone();
+    fetchLabels();
+  }, []);
 
   const handleSyncTemplates = async () => {
     setIsSyncing(true);
@@ -107,7 +214,11 @@ export default function CreateCampaign() {
           const result = await response.json();
           const templateObject = result?.data?.__data?.template || result?.data?.template;
           if (templateObject) {
-            setSelectedTemplate(templateObject);
+            setSelectedTemplate({
+              ...templateObject,
+              _id: result?.data?._id || passedTpl._id,
+              template_id: result?.data?.template_id || passedTpl.template_id
+            });
           }
         }
       } catch (err) {
@@ -139,9 +250,10 @@ export default function CreateCampaign() {
         },
         body: JSON.stringify({
           title: campaignTitle,
-          whatsapp_template_id: Number(selectedTemplate?.template_id || 106), // Make sure it's a number
+          whatsapp_template_id: String(selectedTemplate?._id || selectedTemplate?.template_id || '106'),
           scheduled_at: scheduleNow ? new Date().toISOString().replace('T', ' ').substring(0, 19) : "2026-03-30 11:00:00",
           contact_group_id: Number(selectedGroup),
+          ...(selectedLabel && { contact_label_id: Number(selectedLabel) }),
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
           template_data: Object.keys(varSelections).length ? JSON.stringify(varSelections) : ""
         })
@@ -290,7 +402,11 @@ export default function CreateCampaign() {
                           const result = await response.json();
                           const templateObject = result?.data?.__data?.template || result?.data?.template;
                           if (templateObject) {
-                            setSelectedTemplate(templateObject);
+                            setSelectedTemplate({
+                              ...templateObject,
+                              _id: result?.data?._id || tpl._id,
+                              template_id: result?.data?.template_id || tpl.template_id
+                            });
                           } else {
                             setSelectedTemplate(possiblyLoadedTemplate);
                             alert("Could not load template details from API; using available data.");
@@ -464,9 +580,15 @@ export default function CreateCampaign() {
               onChange={(e) => setSelectedGroup(e.target.value)}
             >
               <option value="">Select a Group...</option>
-              <option value="1">First Visitors (example)</option>
-              <option value="2">Mayilo Premium Offer</option>
-              <option value="3">COD</option>
+              {groupsLoading ? (
+                <option disabled>Loading groups...</option>
+              ) : groups.length === 0 ? (
+                <option disabled>No groups found</option>
+              ) : (
+                groups.map(g => (
+                  <option key={g._id || g.id} value={g._id || g.id}>{g.title}</option>
+                ))
+              )}
             </select>
             <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
           </div>
@@ -474,7 +596,26 @@ export default function CreateCampaign() {
 
         <div className="form-group" style={{ marginBottom: '1.2rem' }}>
           <label className="form-label" style={{ fontSize: '0.85rem', color: '#64748b' }}>Labels/Tags</label>
-          <input type="text" className="form-input" placeholder="Select Labels" style={{ backgroundColor: '#ffffff', padding: '0.6rem 1rem', border: '1px solid #cbd5e1' }} />
+          <div style={{ position: 'relative' }}>
+            <select
+              className="form-input"
+              style={{ padding: '0.6rem 1rem', appearance: 'none', backgroundColor: '#ffffff', border: '1px solid #cbd5e1' }}
+              value={selectedLabel}
+              onChange={(e) => setSelectedLabel(e.target.value)}
+            >
+              <option value="">Select a Label/Tag...</option>
+              {labelsLoading ? (
+                <option disabled>Loading labels...</option>
+              ) : labels.length === 0 ? (
+                <option disabled>No labels found</option>
+              ) : (
+                labels.map(l => (
+                  <option key={l._id || l.id} value={l._id || l.id}>{l.title || l.name}</option>
+                ))
+              )}
+            </select>
+            <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem', cursor: 'pointer' }} onClick={() => setRestrictLang(!restrictLang)}>
@@ -498,7 +639,7 @@ export default function CreateCampaign() {
           <label className="form-label" style={{ fontSize: '0.85rem', color: '#64748b' }}>Send using Phone Number</label>
           <div style={{ position: 'relative', maxWidth: '500px' }}>
             <select className="form-input" style={{ padding: '0.6rem 1rem', appearance: 'none', backgroundColor: '#ffffff', border: '1px solid #cbd5e1' }}>
-              <option>+91 99520 43116</option>
+              <option>{displayPhoneNumber || '+91 99520 43116'}</option>
             </select>
             <ChevronDown size={16} style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#64748b' }} />
           </div>
