@@ -160,7 +160,7 @@ export default function BusinessHoursSidebar({
     }
     fetchTemplateData();
     axios
-      .post("https://dev.salegrowy.com/api/getFlowMessages", {
+      .post(`${import.meta.env.VITE_BASE_URI}/api/getFlowMessages`, {
         vendor_uid: vendor_uid,
       })
       .then((res) => {

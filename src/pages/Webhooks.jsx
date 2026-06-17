@@ -1,36 +1,114 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Webhook, Play, Check } from 'lucide-react';
+import { decryptData } from '../utils/encryption';
 
 export default function Webhooks() {
   const [isEnabled, setIsEnabled] = useState(() => localStorage.getItem('webhooks_enabled') === 'true');
   const [isLoading, setIsLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
   const [createdWebhooks, setCreatedWebhooks] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('webhooks_created') || '[]');
     } catch { return []; }
   });
 
+  useEffect(() => {
+    const checkWebhookStatus = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/check-webhooks-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        const encryptedResult = await response.json();
+        
+        let result = encryptedResult;
+        if (encryptedResult.payload) {
+          result = decryptData(encryptedResult.payload);
+        }
+
+        console.log('[Webhook Status Decrypted Response]:', result);
+        
+        if (response.ok && (encryptedResult.success || result.success)) {
+          let enabled = false;
+          let webhooksToSet = null;
+
+          // 1. Check for webhooks array in various possible nested locations
+          if (result.data?.data?.createdWebhooks) {
+            webhooksToSet = result.data.data.createdWebhooks;
+            enabled = true;
+          } else if (result.data?.createdWebhooks) {
+            webhooksToSet = result.data.createdWebhooks;
+            enabled = true;
+          } else if (result.data?.webhooks) {
+            webhooksToSet = result.data.webhooks;
+            enabled = true;
+          } else if (Array.isArray(result.data) && result.data.length > 0) {
+            webhooksToSet = result.data;
+            enabled = true;
+          }
+
+          // 2. Check for boolean flags
+          if (!enabled) {
+            enabled = result.data?.isEnabled ?? result.data?.is_enabled ?? result.data?.enabled ?? 
+                      result.isEnabled ?? result.is_enabled ?? result.enabled ?? 
+                      result.data?.status === 'enabled' ?? result.data?.hasWebhooks ?? 
+                      result.data?.has_webhooks ?? false;
+            
+            if (typeof result.data === 'boolean') {
+               enabled = result.data;
+            }
+          }
+
+          setIsEnabled(enabled);
+          localStorage.setItem('webhooks_enabled', enabled ? 'true' : 'false');
+          
+          if (webhooksToSet) {
+            setCreatedWebhooks(webhooksToSet);
+            localStorage.setItem('webhooks_created', JSON.stringify(webhooksToSet));
+          }
+        } else {
+          console.log('[Webhook Status] API returned success: false or not ok', result);
+        }
+      } catch (err) {
+        console.error('Error checking webhook status:', err);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkWebhookStatus();
+  }, []);
+
   const handleEnable = async () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('https://salegrowymail.com/api/vendor/enable-webhooks', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/enable-webhooks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      const result = await response.json();
+      const encryptedResult = await response.json();
       
-      if (response.ok && result.success) {
+      let result = encryptedResult;
+      if (encryptedResult.payload) {
+        result = decryptData(encryptedResult.payload);
+      }
+      
+      if (response.ok && (encryptedResult.success || result.success)) {
         setIsEnabled(true);
         localStorage.setItem('webhooks_enabled', 'true');
-        if (result.data?.data?.createdWebhooks) {
-          setCreatedWebhooks(result.data.data.createdWebhooks);
-          localStorage.setItem('webhooks_created', JSON.stringify(result.data.data.createdWebhooks));
+        if (result.data?.data?.createdWebhooks || result.data?.createdWebhooks) {
+          const webhooksToSet = result.data.data?.createdWebhooks || result.data.createdWebhooks;
+          setCreatedWebhooks(webhooksToSet);
+          localStorage.setItem('webhooks_created', JSON.stringify(webhooksToSet));
         }
-        alert(result.data?.message || "Webhooks enabled successfully!");
+        alert(result.data?.message || result.message || "Webhooks enabled successfully!");
       } else {
         alert("Failed to enable webhooks. Please try again.");
       }
@@ -64,19 +142,20 @@ export default function Webhooks() {
               backgroundColor: isEnabled ? '#22c55e' : '#94a3b8', 
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'white', transition: 'all 0.3s ease',
-              marginTop: isEnabled ? '4px' : '0'
+              marginTop: isEnabled ? '4px' : '0',
+              opacity: isChecking ? 0.5 : 1
             }}>
               <Webhook size={24} />
             </div>
             
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b' }}>
-                Status: {isEnabled ? 'Enabled' : 'Disabled'}
+                Status: {isChecking ? 'Checking...' : (isEnabled ? 'Enabled' : 'Disabled')}
               </div>
               <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                {isEnabled ? 'Your webhook is active and ready to receive events.' : 'Enable the webhook to start receiving events.'}
+                {isChecking ? 'Verifying current webhook status...' : (isEnabled ? 'Your webhook is active and ready to receive events.' : 'Enable the webhook to start receiving events.')}
               </div>
-              {isEnabled && (
+              {isEnabled && !isChecking && (
                 <div style={{ 
                   backgroundColor: '#ffffff', 
                   borderRadius: '8px', 
@@ -108,30 +187,30 @@ export default function Webhooks() {
             {!isEnabled && (
               <button 
                 onClick={handleEnable}
-                disabled={isLoading}
+                disabled={isLoading || isChecking}
                 style={{
                   padding: '0.75rem 1.5rem',
                   borderRadius: '8px',
                   fontWeight: 600,
                   fontSize: '0.9rem',
                   border: 'none',
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  cursor: (isLoading || isChecking) ? 'not-allowed' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
                   backgroundColor: '#22c55e',
                   color: 'white',
                   transition: 'background-color 0.2s',
-                  opacity: isLoading ? 0.7 : 1
+                  opacity: (isLoading || isChecking) ? 0.7 : 1
                 }}
               >
                 <Play size={18} />
-                {isLoading ? 'Enabling...' : 'Enable Webhook'}
+                {isLoading ? 'Enabling...' : (isChecking ? 'Checking...' : 'Enable Webhook')}
               </button>
             )}
           </div>
 
-          {createdWebhooks.length > 0 && (
+          {!isChecking && createdWebhooks.length > 0 && (
             <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
               <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.5rem' }}>Registered Topics:</h3>
               <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: '0.85rem', color: '#475569' }}>

@@ -992,6 +992,10 @@ export default function Automations() {
             if (form.triggerType?.includes("specific_date") || form.triggerType?.includes("specific date")) {
                 if (!form.specificDateConfig?.date || !form.specificDateConfig?.time) return false;
             }
+            if (form.triggerType === "webhook_trigger") {
+                if (!form.webhookConfig?.webhookUrl?.trim()) return false;
+                if (!form.webhookConfig?.event?.trim()) return false;
+            }
 
             return true;
         }
@@ -1138,7 +1142,7 @@ export default function Automations() {
                 const emailMapping = form.webhookConfig.fieldMappings?.find(m => m.crmField === "email")?.webhookField || "";
 
                 requestData.webhook_source = form.webhookConfig.source;
-                requestData.webhook_event = form.webhookConfig.event;
+                requestData.webhook_event = form.webhookConfig.event?.toLowerCase() || "";
                 requestData.webhook_url = form.webhookConfig.webhookUrl;
                 requestData.name_key_from_webhook = nameMapping;
                 requestData.phone_key_from_webhook = phoneMapping;
@@ -1367,22 +1371,25 @@ export default function Automations() {
         }
 
         // 3. Conditions Validation
+        const allConditionsEmpty = form.conditions.every(cond => !cond.field && !cond.operator);
+        
+        if (!allConditionsEmpty) {
+            for (let i = 0; i < form.conditions.length; i++) {
+                const cond = form.conditions[i];
+                const noValueOperators = ["exists", "not_exists", "is_empty", "is", "is_not", "does_not_exist"];
 
-        for (let i = 0; i < form.conditions.length; i++) {
-            const cond = form.conditions[i];
-            const noValueOperators = ["exists", "not_exists", "is_empty", "is", "is_not", "does_not_exist"];
-
-            if (!cond.field) {
-                toast.error(`Condition ${i + 1}: Field is required`);
-                return;
-            }
-            if (!cond.operator) {
-                toast.error(`Condition ${i + 1}: Operator is required`);
-                return;
-            }
-            if (!noValueOperators.includes(cond.operator) && !cond.value?.toString().trim()) {
-                toast.error(`Condition ${i + 1}: Value is required`);
-                return;
+                if (!cond.field) {
+                    toast.error(`Condition ${i + 1}: Field is required`);
+                    return;
+                }
+                if (!cond.operator) {
+                    toast.error(`Condition ${i + 1}: Operator is required`);
+                    return;
+                }
+                if (!noValueOperators.includes(cond.operator) && !cond.value?.toString().trim()) {
+                    toast.error(`Condition ${i + 1}: Value is required`);
+                    return;
+                }
             }
         }
 

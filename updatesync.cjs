@@ -11,7 +11,7 @@ const SyncProductsContent = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        "https://salegrowymail.com/api/vendor/sync-products",
+        "https://ecomapi.salegrowy.com/api/vendor/sync-products",
         {},
         {
           headers: {

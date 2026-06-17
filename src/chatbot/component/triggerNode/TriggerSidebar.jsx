@@ -113,7 +113,7 @@ export default function TriggerSidebar({
 
     try {
       const response = await fetch(
-        "https://dev.salegrowy.com/api/getOrCreateShopifyWebhook",
+        `${import.meta.env.VITE_BASE_URI}/api/getOrCreateShopifyWebhook`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

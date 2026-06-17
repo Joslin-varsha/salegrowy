@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import Pusher from "pusher-js";
 import { getVendorId } from "../../utils/getVendorId";
+import { decryptData } from "../../../utils/encryption";
 
 const WEBHOOK_SOURCES = [
   { value: "shopify", label: "Shopify" },
@@ -212,6 +213,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
   const [testStatus, setTestStatus] = useState("idle");
   const [copied, setCopied] = useState(false);
   const [pusherInstance, setPusherInstance] = useState(null);
+  const [shopifyWebhooks, setShopifyWebhooks] = useState([]);
   const textareaRef = useRef(null);
 
   const prevConfig = useRef(config);
@@ -224,6 +226,47 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     currentSetTestStatus.current = setTestStatus;
   }, [config, onChange, testStatus]);
 
+  useEffect(() => {
+    const fetchShopifyWebhooks = async () => {
+      try {
+        const response = await fetch('https://ecomapi.salegrowy.com/api/vendor/shopify-webhooks/list', {
+          method: 'POST', // Trying GET first, can be changed to POST if required
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        let result = await response.json();
+        
+        if (result.payload) {
+          result = decryptData(result.payload);
+        }
+
+        if (result.success && result.data) {
+          setShopifyWebhooks(result.data);
+        } else if (!response.ok || !result.success) {
+           // Fallback to POST if GET fails
+           const postResponse = await fetch('https://ecomapi.salegrowy.com/api/vendor/shopify-webhooks/list', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${localStorage.getItem('token')}`
+             }
+           });
+           let postResult = await postResponse.json();
+           if (postResult.payload) postResult = decryptData(postResult.payload);
+           if (postResult.success && postResult.data) {
+             setShopifyWebhooks(postResult.data);
+           }
+        }
+      } catch (err) {
+        console.error('Error fetching Shopify webhooks:', err);
+      }
+    };
+
+    fetchShopifyWebhooks();
+  }, []);
 
   useEffect(() => {
     let channel;
@@ -253,7 +296,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
             const currentWebhookUrl = prevConfig.current.webhookUrl;
             if (!currentWebhookUrl) return;
 
-            const res = await axios.post("https://dev.salegrowybox.com/api/getWebhookData", {
+            const res = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/getWebhookData`, {
               webhookUrl: currentWebhookUrl
             });
 
@@ -321,11 +364,6 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     };
   }, [config.source]);
 
-
-
-
-
-
   useEffect(() => {
     if (textareaRef.current && config.source === "custom") {
       textareaRef.current.style.height = "auto";
@@ -354,12 +392,11 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-
   const [data, setData] = useState(null);
   const generateWebhookUrl = async () => {
     try {
       const vendorId = await getVendorId();
-      const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
+      const res = await axios.post(`${import.meta.env.VITE_BASE_URI}/api/generate-webhook-url`, { vendorId });
       if (res.data?.status && res.data?.data?.webhook_url) {
         onChange({
           ...config,
@@ -373,22 +410,48 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     }
   };
 
+  const formatShopifyEventValue = (event) => {
+    if (!event) return "";
+    let e = event.toLowerCase();
+    
+    // Specific legacy mappings
+    if (e === "orders_create") return "order_created";
+    if (e === "customers_create") return "customer_created";
+    if (e === "products_create") return "product_created";
+    if (e === "checkouts_create") return "abandoned_cart";
+    
+
+    // Generic fallback for plurals like "SOMETHINGS_CREATE" -> "something_created"
+    if (e.endsWith("s_create")) return e.replace(/s_create$/, "_created");
+    if (e.endsWith("_create")) return e.replace(/_create$/, "_created");
+    if (e.endsWith("s_update")) return e.replace(/s_update$/, "_updated");
+    if (e.endsWith("_update")) return e.replace(/_update$/, "_updated");
+
+    return e;
+  };
+
+  const getDynamicEvents = (source) => {
+    if (source === "shopify" && shopifyWebhooks.length > 0) {
+      return shopifyWebhooks.map(wh => ({
+        value: formatShopifyEventValue(wh.event),
+        label: wh.event ? wh.event.replace(/_/g, ' ') : "",
+        webhookurl: wh.webhookurl
+      }));
+    }
+    return WEBHOOK_EVENTS[source] || WEBHOOK_EVENTS.custom;
+  };
+
   const updateSource = async (source) => {
-    const events = WEBHOOK_EVENTS[source];
-    const newEvent = events[0].value;
+    const sourceEvents = getDynamicEvents(source);
+    const newEvent = sourceEvents[0].value;
     const examplePayload = EXAMPLE_PAYLOADS[source] || EXAMPLE_PAYLOADS.custom;
     const customPayload = JSON.stringify(examplePayload, null, 2);
 
     let newUrl = config.webhookUrl;
-    try {
-      const vendorId = await getVendorId();
-      const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
-      if (res.data?.status && res.data?.data?.webhook_url) {
-        newUrl = res.data.data.webhook_url;
-      }
-    } catch (e) {
-      console.error(e);
+    if (sourceEvents[0] && sourceEvents[0].webhookurl) {
+      newUrl = sourceEvents[0].webhookurl;
     }
+
     onChange({
       ...config,
       source,
@@ -399,20 +462,18 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
   };
 
   const updateEvent = async (event) => {
+    const sourceEvents = getDynamicEvents(config.source);
+    const selectedEvent = sourceEvents.find(e => e.value === event);
+    
     let newUrl = config.webhookUrl;
-    // Set example payload based on source even when event changes to ensure it's populated
+    if (selectedEvent && selectedEvent.webhookurl) {
+      newUrl = selectedEvent.webhookurl;
+      console.log("Using dynamic webhook URL for event:", newUrl);
+    }
+
     const examplePayload = EXAMPLE_PAYLOADS[config.source] || EXAMPLE_PAYLOADS.custom;
     const customPayload = JSON.stringify(examplePayload, null, 2);
 
-    try {
-      const vendorId = await getVendorId();
-      const res = await axios.post("https://dev.salegrowybox.com/api/generate-webhook-url", { vendorId });
-      if (res.data?.status && res.data?.data?.webhook_url) {
-        newUrl = res.data.data.webhook_url;
-      }
-    } catch (e) {
-      console.error(e);
-    }
     onChange({
       ...config,
       event,
@@ -447,7 +508,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
     });
   };
 
-  const events = WEBHOOK_EVENTS[config.source] || WEBHOOK_EVENTS.custom;
+  const events = getDynamicEvents(config.source);
   const currentExample = EXAMPLE_PAYLOADS[config.source] || EXAMPLE_PAYLOADS.custom;
 
   let parsedPayload = currentExample;
@@ -493,7 +554,8 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
         </div>
       </div>
 
-      {/* Webhook URL */}
+      {/* Webhook URL section is commented out as URLs are managed automatically */}
+      {/* 
       <div className="space-y-1.5">
         <Label className="text-xs">Webhook URL</Label>
         <div className="flex items-center gap-2">
@@ -532,9 +594,11 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
         <p className="text-[10px] text-muted-foreground">
           Send HTTP POST requests to this URL from your {WEBHOOK_SOURCES.find(s => s.value === config.source)?.label || "external"} platform.
         </p>
-      </div>
+      </div> 
+      */}
 
       {/* Listen for Payload */}
+      {/* 
       <div className="flex items-center gap-3 p-4 rounded-lg border border-dashed border-border bg-muted/30">
         <div className="flex-1">
           <p className="text-xs font-medium">Listen for Live Payload</p>
@@ -560,6 +624,7 @@ export function WebhookConfigPanel({ config, ruleId, onChange }) {
           {testStatus === "success" && "Payload Received"}
         </Button>
       </div>
+      */}
 
 
 

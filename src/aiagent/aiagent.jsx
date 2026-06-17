@@ -61,7 +61,7 @@ const SyncProductsContent = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        "https://salegrowymail.com/api/vendor/sync-products",
+        `${import.meta.env.VITE_API_URL}/api/vendor/sync-products`,
         {},
         {
           headers: {
@@ -197,7 +197,7 @@ const AIAgent = () => {
       const token = localStorage.getItem('token');
       console.log("token", token);
       const response = await axios.post(
-        "https://salegrowymail.com/api/vendor/localStorage-data",
+        `${import.meta.env.VITE_API_URL}/api/vendor/localStorage-data`,
         {},
         {
           headers: {

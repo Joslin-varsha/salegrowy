@@ -13,7 +13,7 @@ const ShopifyAuth = () => {
     const shop = params.get('shop');
 
     // PHASE 1: Entry from Shopify
-    if (location.pathname === '/shopify') {
+    if (location.pathname.replace(/\/$/, '') === '/shopify') {
       const getAuthLink = async () => {
         if (shop) {
           // Save the shop link to localStorage for future use (like subscriptions)
@@ -51,7 +51,7 @@ const ShopifyAuth = () => {
     }
 
     // PHASE 2: Callback from Shopify
-    if (location.pathname === '/callback') {
+    if (location.pathname.replace(/\/$/, '') === '/callback') {
       localStorage.clear();
       const finalizeAuth = async () => {
         const code = params.get('code');

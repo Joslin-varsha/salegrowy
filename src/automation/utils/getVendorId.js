@@ -14,7 +14,7 @@ export async function getVendorId() {
 
     try {
         const token = localStorage.getItem('token');
-        const response = await fetch('https://shopifyapi.salegrowy.com/api/vendor/profile', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/vendor/profile`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
